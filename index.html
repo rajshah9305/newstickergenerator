@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weed Sticker Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-left-color: #4ade80; /* green-400 */
+            border-radius: 50%;
+            width: 64px;
+            height: 64px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-[#1e2025] text-gray-300 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-md text-center">
+        <!-- Header -->
+        <header class="mb-6">
+            <h1 class="text-4xl sm:text-5xl font-bold text-green-400">Weed Sticker Generator</h1>
+            <p class="text-gray-400 mt-2">Refresh the page for a new sticker!</p>
+        </header>
+
+        <!-- Image and Loader Container -->
+        <main id="generator-container" class="bg-[#2a2c33] p-4 rounded-lg shadow-lg w-full aspect-square flex items-center justify-center">
+            <!-- Loader -->
+            <div id="loader" class="text-center flex flex-col items-center justify-center space-y-4">
+                <div class="loader"></div>
+                <p class="font-medium text-lg">Generating...</p>
+                <p id="prompt-display" class="text-sm text-gray-400 italic px-4"></p>
+            </div>
+            <!-- Image Display -->
+            <img id="sticker-image" src="" alt="AI-generated weed sticker" class="hidden w-full h-full object-contain rounded-md"/>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-6 text-xs text-gray-500">
+            <p>Powered by Gemini API. Images are AI-generated.</p>
+        </footer>
+    </div>
+
+    <script>
+        const loader = document.getElementById('loader');
+        const stickerImage = document.getElementById('sticker-image');
+        const promptDisplay = document.getElementById('prompt-display');
+
+        // --- Prompts for Sticker Generation ---
+        const prompts = [
+            "A beautiful glass jar full of frosty cannabis buds, sticker art, die-cut",
+            "A vibrant, cartoon-style cannabis leaf with a smiling face, sticker art",
+            "A detailed illustration of a single, frosty cannabis bud, sticker style, white background",
+            "A minimalist line art of a bong, sticker design, clean lines",
+            "A cute, kawaii-style joint character with big eyes, sticker art",
+            "A psychedelic, colorful cannabis plant, sticker art, die-cut",
+            "A vintage-style seed packet for 'Cosmic Kush', sticker design illustration",
+            "A happy, stoned alien smoking a joint, cartoon sticker art",
+            "A sticker of a cannabis-infused gummy bear, vibrant colors, die-cut",
+            "'Good Vibes' text with a cannabis leaf, retro 70s style, sticker art",
+            "A majestic lion with a mane made of cannabis leaves, sticker art",
+            "A skull with cannabis leaves growing out of it, sticker design, detailed illustration"
+        ];
+
+        // --- Gemini API Call ---
+        async function generateSticker() {
+            try {
+                // 1. Setup: Show loader and select a random prompt
+                stickerImage.classList.add('hidden');
+                loader.classList.remove('hidden');
+                
+                const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+                promptDisplay.textContent = `"${randomPrompt}"`;
+
+                const apiKey = ""; // API key is handled by the environment, leave empty
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                const payload = {
+                    instances: [{ prompt: randomPrompt }],
+                    parameters: { "sampleCount": 1 }
+                };
+                
+                // 2. API Call with Exponential Backoff
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(`API Error: ${error.error?.message || response.statusText}`);
+                }
+                
+                const result = await response.json();
+
+                // 3. Process and Display Image
+                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                    const base64Data = result.predictions[0].bytesBase64Encoded;
+                    stickerImage.src = `data:image/png;base64,${base64Data}`;
+                    
+                    // Wait for image to load before swapping
+                    stickerImage.onload = () => {
+                        loader.classList.add('hidden');
+                        stickerImage.classList.remove('hidden');
+                    };
+                    stickerImage.onerror = () => {
+                        throw new Error("Failed to load the generated image.");
+                    };
+                } else {
+                    throw new Error("No image data received from API.");
+                }
+
+            } catch (error) {
+                console.error("Error generating sticker:", error);
+                loader.innerHTML = `<p class="text-red-400 text-center">Failed to generate sticker. Please refresh and try again.</p>`;
+            }
+        }
+
+        // --- Fetch with Retry Logic ---
+        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status !== 429 && response.status < 500) { // Don't retry on client errors (except 429)
+                        return response;
+                    }
+                    // For 429 (Too Many Requests) or 5xx server errors, wait and retry
+                    console.log(`Request failed, retrying in ${delay / 1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Exponential backoff
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', generateSticker);
+    </script>
+</body>
+</html>
+
