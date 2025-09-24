@@ -1,5 +1,9 @@
 // api/generate-sticker.js - Robust version with multiple API attempts
 export default async function handler(req, res) {
+    // Set proper headers for Vercel
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     // Enable CORS
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -14,9 +18,16 @@ export default async function handler(req, res) {
     }
 
     try {
+        console.log('Request received:', {
+            method: req.method,
+            headers: req.headers,
+            body: req.body ? 'Present' : 'Missing'
+        });
+
         const { prompt } = req.body;
         
         if (!prompt) {
+            console.log('Error: No prompt provided');
             return res.status(400).json({ error: 'Prompt is required' });
         }
         
@@ -39,8 +50,14 @@ export default async function handler(req, res) {
         const apiKey = process.env.GEMINI_API_KEY;
         
         if (!apiKey) {
-            return res.status(500).json({ error: 'API key not configured' });
+            console.log('Error: GEMINI_API_KEY environment variable not set');
+            return res.status(500).json({ 
+                error: 'API key not configured',
+                details: 'GEMINI_API_KEY environment variable is missing'
+            });
         }
+
+        console.log('API key found, proceeding with generation...');
 
         // Try multiple API endpoints/formats with correct endpoints
         const apiAttempts = [
@@ -198,23 +215,29 @@ export default async function handler(req, res) {
 
 // Create a simple placeholder image
 function createPlaceholderImage(prompt) {
-    // Create a simple SVG-based placeholder that shows it's a placeholder
-    const svgContent = `
-        <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
-            <rect width="400" height="400" fill="#2a2c33"/>
-            <circle cx="200" cy="150" r="50" fill="#4ade80" opacity="0.3"/>
-            <text x="200" y="250" text-anchor="middle" fill="#4ade80" font-family="Arial" font-size="16" font-weight="bold">
-                Weed Sticker
-            </text>
-            <text x="200" y="280" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="12">
-                API Temporarily Unavailable
-            </text>
-            <text x="200" y="320" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="10">
-                ${prompt.length > 40 ? prompt.substring(0, 40) + '...' : prompt}
-            </text>
-        </svg>
-    `;
-    
-    // Convert SVG to base64
-    return Buffer.from(svgContent).toString('base64');
+    try {
+        // Create a simple SVG-based placeholder that shows it's a placeholder
+        const svgContent = `
+            <svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">
+                <rect width="400" height="400" fill="#2a2c33"/>
+                <circle cx="200" cy="150" r="50" fill="#4ade80" opacity="0.3"/>
+                <text x="200" y="250" text-anchor="middle" fill="#4ade80" font-family="Arial" font-size="16" font-weight="bold">
+                    Weed Sticker
+                </text>
+                <text x="200" y="280" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="12">
+                    API Temporarily Unavailable
+                </text>
+                <text x="200" y="320" text-anchor="middle" fill="#6b7280" font-family="Arial" font-size="10">
+                    ${prompt.length > 40 ? prompt.substring(0, 40) + '...' : prompt}
+                </text>
+            </svg>
+        `;
+        
+        // Convert SVG to base64
+        return Buffer.from(svgContent).toString('base64');
+    } catch (error) {
+        console.error('Error creating placeholder image:', error);
+        // Return a minimal fallback
+        return Buffer.from('<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg"><rect width="400" height="400" fill="#2a2c33"/><text x="200" y="200" text-anchor="middle" fill="#4ade80">Placeholder</text></svg>').toString('base64');
+    }
 }
