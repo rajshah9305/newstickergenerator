@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Generate unique AI-powered weed sticker designs using Google Gemini API">
+    <meta name="theme-color" content="#1e2025">
     <title>Weed Sticker Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -33,15 +37,15 @@
         </header>
 
         <!-- Image and Loader Container -->
-        <main id="generator-container" class="bg-[#2a2c33] p-4 rounded-lg shadow-lg w-full aspect-square flex items-center justify-center">
+        <main id="generator-container" class="bg-[#2a2c33] p-4 rounded-lg shadow-lg w-full aspect-square flex items-center justify-center" role="main" aria-live="polite">
             <!-- Loader -->
-            <div id="loader" class="text-center flex flex-col items-center justify-center space-y-4">
-                <div class="loader"></div>
+            <div id="loader" class="text-center flex flex-col items-center justify-center space-y-4" role="status" aria-label="Generating sticker">
+                <div class="loader" aria-hidden="true"></div>
                 <p class="font-medium text-lg">Generating...</p>
                 <p id="prompt-display" class="text-sm text-gray-400 italic px-4"></p>
             </div>
             <!-- Image Display -->
-            <img id="sticker-image" src="" alt="AI-generated weed sticker" class="hidden w-full h-full object-contain rounded-md"/>
+            <img id="sticker-image" src="" alt="AI-generated weed sticker" class="hidden w-full h-full object-contain rounded-md" loading="lazy" decoding="async"/>
         </main>
 
         <!-- Footer -->
@@ -71,7 +75,7 @@
             "A skull with cannabis leaves growing out of it, sticker design, detailed illustration"
         ];
 
-        // --- Gemini API Call ---
+        // --- Generate Sticker via Backend API ---
         async function generateSticker() {
             try {
                 // 1. Setup: Show loader and select a random prompt
@@ -81,13 +85,9 @@
                 const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
                 promptDisplay.textContent = `"${randomPrompt}"`;
 
-                const apiKey = ""; // API key is handled by the environment, leave empty
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-
-                const payload = {
-                    instances: [{ prompt: randomPrompt }],
-                    parameters: { "sampleCount": 1 }
-                };
+                // Use our backend API instead of direct external API call
+                const apiUrl = '/api/generate-sticker';
+                const payload = { prompt: randomPrompt };
                 
                 // 2. API Call with Exponential Backoff
                 const response = await fetchWithRetry(apiUrl, {
@@ -97,16 +97,24 @@
                 });
                 
                 if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(`API Error: ${error.error?.message || response.statusText}`);
+                    const error = await response.json().catch(() => ({ error: response.statusText }));
+                    throw new Error(`API Error: ${error.error || error.details || response.statusText}`);
                 }
                 
                 const result = await response.json();
 
                 // 3. Process and Display Image
-                if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
-                    const base64Data = result.predictions[0].bytesBase64Encoded;
-                    stickerImage.src = `data:image/png;base64,${base64Data}`;
+                if (result.success && result.image) {
+                    const base64Data = result.image;
+                    
+                    // Handle different image formats
+                    if (result.isPlaceholder) {
+                        // SVG placeholder
+                        stickerImage.src = `data:image/svg+xml;base64,${base64Data}`;
+                    } else {
+                        // Regular PNG image
+                        stickerImage.src = `data:image/png;base64,${base64Data}`;
+                    }
                     
                     // Wait for image to load before swapping
                     stickerImage.onload = () => {
@@ -116,13 +124,18 @@
                     stickerImage.onerror = () => {
                         throw new Error("Failed to load the generated image.");
                     };
+                    
+                    // Show method used if it's a placeholder
+                    if (result.method === 'placeholder' && result.note) {
+                        console.log('Note:', result.note);
+                    }
                 } else {
-                    throw new Error("No image data received from API.");
+                    throw new Error(result.error || "No image data received from API.");
                 }
 
             } catch (error) {
                 console.error("Error generating sticker:", error);
-                loader.innerHTML = `<p class="text-red-400 text-center">Failed to generate sticker. Please refresh and try again.</p>`;
+                loader.innerHTML = `<p class="text-red-400 text-center">Failed to generate sticker. Please refresh and try again.<br><small class="text-xs">${error.message}</small></p>`;
             }
         }
 
