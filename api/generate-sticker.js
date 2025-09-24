@@ -120,6 +120,12 @@ export default async function handler(req, res) {
                 });
 
                 clearTimeout(timeoutId);
+                
+                // Ensure we have a valid response object
+                if (!response) {
+                    throw new Error('No response received from API');
+                }
+                
                 console.log(`Response status: ${response.status}`);
                 
                 if (!response.ok) {
