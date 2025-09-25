@@ -3,48 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Weed Sticker Generator </title>
+  <title>Weed Sticker Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    html, body { height: 100%; }
     .loader {
-      border: 4px solid rgba(255,255,255,.2);
-      border-left-color: #4ade80;
+      border: 4px solid rgba(0,0,0,.15);
+      border-left-color: #16a34a;
       border-radius: 50%;
-      width: 64px; height: 64px;
+      width: 56px; height: 56px;
       animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    main { flex: 1; }
   </style>
 </head>
-<body class="bg-[#1e2025] text-gray-300 flex flex-col min-h-screen">
-  <!-- HERO -->
-  <header class="w-full pt-6 pb-2 px-4 text-center">
-    <h1 class="font-extrabold text-green-400"
-        style="font-size: clamp(2.5rem, 8vw, 5rem); line-height: 1.1;">
+
+<body class="bg-white text-gray-800">
+  <header class="w-full px-4 pt-6 pb-3 text-center">
+    <h1 class="font-extrabold text-green-600" style="font-size: clamp(2.25rem, 7vw, 4rem); line-height: 1.05;">
       Weed Sticker Generator
     </h1>
-    <p class="text-gray-400 mt-1 text-sm">Refresh for a new 4K sticker – never repeats!</p>
+    <p class="text-gray-500 text-sm mt-1">Refresh for a new sticker</p>
   </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="flex-1 grid place-items-center px-4">
-    <div class="w-full max-w-2xl bg-[#2a2c33] rounded-2xl shadow-lg aspect-video flex items-center justify-center">
-      <!-- loader -->
+  <main class="grid place-items-center px-4 pb-6">
+    <div class="w-full max-w-3xl aspect-square sm:aspect-video bg-gray-50 rounded-2xl shadow flex items-center justify-center">
       <div id="loader" class="flex flex-col items-center gap-3">
         <div class="loader"></div>
-        <p class="font-medium">Generating image...</p>
-        <p id="prompt" class="text-xs text-gray-400 italic px-4"></p>
+        <p class="font-medium text-sm text-gray-600">Generating image…</p>
+        <p id="prompt" class="text-xs text-gray-400 italic px-4 text-center"></p>
       </div>
-      <!-- 4K image -->
-      <img id="sticker" class="hidden w-full h-full object-contain rounded-2xl" alt="4K weed sticker">
+      <img id="sticker" class="hidden w-full h-full object-contain rounded-2xl" alt="weed sticker">
     </div>
   </main>
 
-  <!-- FOOTER – always bottom -->
-  <footer class="text-center text-xs text-gray-500 py-4">
-    Powered by Pollinations • Images are AI-generated • 4K UHD
-    Developed by RAJ  with ❤️
+  <footer class="text-center text-xs text-gray-400 py-4">
+    Images are AI-generated • Developed by RAJ with ❤️
   </footer>
 
   <script>
@@ -63,12 +58,12 @@
       "Skull with cannabis leaves growing out, detailed sticker"
     ];
 
-    const used = new Set();              // no repeats in this session
+    const used = new Set();
     function uniquePrompt() {
       let p;
       do { p = prompts[Math.floor(Math.random() * prompts.length)]; }
       while (used.has(p) && used.size < prompts.length);
-      if (used.size === prompts.length) used.clear(); // rare reset
+      if (used.size === prompts.length) used.clear();
       used.add(p);
       return p;
     }
@@ -97,7 +92,7 @@
         sticker.onload = () => { loader.classList.add('hidden'); sticker.classList.remove('hidden'); };
         sticker.onerror = () => { throw new Error('Image load failed'); };
       } catch (e) {
-        loader.innerHTML = `<p class="text-red-400 text-sm">Failed: ${e.message}<br><small class="text-xs">Refresh to retry</small></p>`;
+        loader.innerHTML = `<p class="text-red-500 text-sm">Failed: ${e.message}<br><small class="text-xs">Refresh to retry</small></p>`;
       }
     }
 
