@@ -19,6 +19,10 @@
       background:#fff;overflow:hidden;
     }
     #smoke canvas{display:block;width:100%;height:100%}
+    .loader-container{
+      display:flex;flex-direction:column;align-items:center;
+      gap:1rem;text-align:center;
+    }
     .loader{
       width:56px;height:56px;border:4px solid rgba(0,0,0,.1);
       border-left-color:#ec4899;border-radius:50%;animation:spin 1s linear infinite;
@@ -34,11 +38,16 @@
       filter:drop-shadow(0 25px 25px rgba(0,0,0,.3));
       transition:opacity .5s ease,transform .5s ease;
     }
-    #sticker.hidden{opacity:0;transform:scale(.9)}
+    #sticker.hidden, .loader-container.hidden, #promptUnder.hidden {
+        opacity:0;
+        pointer-events: none;
+        position: absolute;
+    }
     #promptUnder{
       margin-top:.75rem;text-align:center;
       font-size:.875rem;font-style:italic;color:#000;
       max-width:320px;
+      transition: opacity 0.5s ease;
     }
     .generate-btn{
       background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);
@@ -64,18 +73,18 @@
     <p class="text-black text-base md:text-lg mt-1">Never the same sticker twice</p>
   </header>
 
-  <div id="stickerWrap">
-    <div id="loader" class="flex flex-col items-center gap-4 text-center">
+  <main id="stickerWrap">
+    <div id="loader" class="loader-container">
       <div class="loader"></div>
       <p class="text-base text-black font-medium">Crafting your sticker…</p>
     </div>
     <img id="sticker" class="hidden" alt="AI-generated weed sticker">
     <p id="promptUnder" class="hidden"></p>
-  </div>
+  </main>
 
-  <div class="relative z-10 w-full flex justify-center pb-6">
+  <footer class="relative z-10 w-full flex justify-center pb-6">
     <button id="newBtn" class="generate-btn" aria-label="Generate new sticker">New Sticker</button>
-  </div>
+  </footer>
 
   <div id="toast" class="toast"></div>
 
