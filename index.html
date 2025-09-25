@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -19,24 +18,21 @@
     }
     #smoke canvas { display: block; width: 100%; height: 100%; }
 
-```
-/* ----  LOADER  ---- */
-.loader {
-  border: 4px solid rgba(0,0,0,.15);
-  border-left-color: #ec4899; /* pink-500 */
-  border-radius: 50%;
-  width: 56px; height: 56px;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+    /* ----  LOADER  ---- */
+    .loader {
+      border: 4px solid rgba(0,0,0,.15);
+      border-left-color: #ec4899;
+      border-radius: 50%;
+      width: 56px; height: 56px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ----  LAYOUT  ---- */
-html, body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: #fff; }
-main { flex: 1; }
-header { margin-top: clamp(3vh, 5vh, 10vh); }
-footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
-```
-
+    /* ----  LAYOUT  ---- */
+    html, body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: #fff; }
+    main { flex: 1; }
+    header { margin-top: clamp(3vh, 5vh, 10vh); }
+    footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
   </style>
 </head>
 
@@ -45,7 +41,6 @@ footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
   <div id="smoke"></div>
 
   <!-- HERO -->
-
   <header class="relative z-10 w-full px-4 pt-4 pb-2 text-center">
     <h1 class="font-extrabold text-white drop-shadow-lg"
         style="font-size: clamp(2.5rem, 8vw, 5rem); line-height: 1.02;">
@@ -55,7 +50,6 @@ footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
   </header>
 
   <!-- MAIN CARD -->
-
   <main class="relative z-10 grid place-items-center px-4 pb-6">
     <div id="card" class="w-auto max-w-[95vw] max-h-[75vh] bg-white rounded-2xl shadow-2xl p-4 grid place-items-center">
       <div id="loader" class="flex flex-col items-center gap-3">
@@ -72,17 +66,11 @@ footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
   </main>
 
   <!-- FOOTER -->
-
   <footer class="relative z-10 text-center text-xs text-gray-400 py-4" style="margin-bottom: clamp(2vh, 4vh, 8vh);">
     Images are AI-generated · Developed by RAJ with ❤️
   </footer>
 
-  <!-- ------------------------------------------------------------------ -->
-
-  <!--                     THREE.JS  –  PINK-KUSH SMOKE                   -->
-
-  <!-- ------------------------------------------------------------------ -->
-
+  <!-- THREE.JS – PINK-KUSH SMOKE -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
   <script>
@@ -310,19 +298,19 @@ footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
       promptEl.textContent = `"${rawPrompt}"`;
 
       try {
-        // Simulate API call for demo - replace with your actual API endpoint
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        const response = await fetch('/api/generate-sticker', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+        const data = await response.json();
         
-        // For demo, we'll show a placeholder
-        sticker.src = 'data:image/svg+xml;base64,' + btoa(`
-          <svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
-            <rect width="300" height="300" fill="white" stroke="#ec4899" stroke-width="4" rx="20"/>
-            <text x="150" y="120" text-anchor="middle" font-family="Arial" font-size="16" fill="#333">🌿</text>
-            <text x="150" y="150" text-anchor="middle" font-family="Arial" font-size="14" fill="#666">Demo Sticker</text>
-            <text x="150" y="180" text-anchor="middle" font-family="Arial" font-size="12" fill="#999">Connect your API</text>
-            <text x="150" y="200" text-anchor="middle" font-family="Arial" font-size="12" fill="#999">for real generation</text>
-          </svg>
-        `);
+        if (!data.success) throw new Error(data.error || 'Generation failed');
+
+        sticker.src = `data:image/jpeg;base64,${data.image}`;
         
         sticker.onload = () => {
           loader.classList.add('hidden');
@@ -330,7 +318,12 @@ footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
           btn.disabled = false;
         };
         
+        sticker.onerror = () => {
+          throw new Error('Failed to load generated image');
+        };
+        
       } catch (e) {
+        console.error('Generation error:', e);
         loader.innerHTML = `<p class="text-red-500 text-sm">Failed: ${e.message}<br><small class="text-xs">Click "New Sticker" to retry</small></p>`;
         btn.disabled = false;
       }
@@ -339,6 +332,5 @@ footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
     /* initial load */
     generate();
   </script>
-
 </body>
 </html>
