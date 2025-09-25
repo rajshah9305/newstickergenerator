@@ -2,12 +2,6 @@
 
 **Never-repeating, AI-powered sticker generator with mesmerizing pink smoke effects**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit%20Site-pink?style=for-the-badge&logo=vercel)](https://stickergenerator.vercel.app)
-[![Deploy with Vercel](https://img.shields.io/badge/Deploy%20with-Vercel-000000?style=for-the-badge&logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/weed-sticker-generator)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-
------
-
 ## ✨ Features
 
 🎨 **AI-Powered Generation** – Creates unique cannabis-themed stickers using advanced AI  
