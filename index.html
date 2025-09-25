@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>Weed Sticker Generator – Pink Kush Smoke</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com "></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     html,body{height:100%;overflow:hidden;margin:0}
@@ -82,14 +82,14 @@
     <p id="promptUnder" class="hidden"></p>
   </main>
 
-  <footer class="relative z-10 w-full flex flex-col items-center pb-6 gap-2">
+  <footer class="relative z-10 w-full flex flex-col items-center pb-10 gap-2">
     <button id="newBtn" class="generate-btn" aria-label="Generate new sticker">New Sticker</button>
     <p class="text-xs text-black opacity-60">Images are AI generated • Developed by RAJ with ❤️</p>
   </footer>
 
   <div id="toast" class="toast"></div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src=" https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js "></script>
   <script type="module">
     /* ---------- Pink-Kush Smoke ---------- */
     let scene,camera,renderer,material,uniforms;
@@ -108,7 +108,11 @@
     float fbm(vec2 st){float value=0.0,amp=0.5;for(int i=0;i<6;i++){value+=amp*snoise(st);st*=2.0;amp*=0.5;}return value;}
     void main(){
       vec2 uv=vUv;float t=u_time*0.09;
-      vec2 suv=uv;suv.y-=t*0.4;
+      
+      // Start smoke from bottom of screen
+      vec2 suv=uv;
+      suv.y-=t*0.4 + 0.5; // Offset to start from bottom
+      
       float n1=fbm(suv*2.0+t),n2=fbm(suv*4.0-t*0.5);
       suv.x+=n1*0.15;suv.y+=n2*0.1;
       float sw=fbm(suv*3.0+t*2.0);suv+=sw*0.08;
@@ -116,8 +120,13 @@
       vec3 c1=vec3(0.96,0.51,0.75),c2=vec3(0.88,0.27,0.53),c3=vec3(0.98,0.71,0.82),c4=vec3(0.7,0.1,0.3);
       vec3 col=mix(c1,c2,smoothstep(-0.5,0.5,fn));col=mix(col,c3,smoothstep(0.0,1.0,fbm(suv*3.0+t)));
       col=mix(col,c4,smoothstep(-1.0,0.0,fbm(suv*1.5)));col*=0.25+0.7*(fn+1.0)*0.5;
-      float fy=smoothstep(0.0,0.4,uv.y)*smoothstep(1.0,0.6,uv.y),fx=smoothstep(0.0,0.2,uv.x)*smoothstep(1.0,0.8,uv.x);
-      float a=(fn+1.0)*0.5*fy*fx;a=clamp(a,0.0,0.95);gl_FragColor=vec4(col,a);
+      
+      // Create gradient effect from bottom up
+      float fy=smoothstep(0.0,0.4,uv.y)*smoothstep(1.0,0.6,uv.y);
+      float fx=smoothstep(0.0,0.2,uv.x)*smoothstep(1.0,0.8,uv.x);
+      float a=(fn+1.0)*0.5*fy*fx;a=clamp(a,0.0,0.95);
+      
+      gl_FragColor=vec4(col,a);
     }`;
 
     function initSmoke(){
@@ -154,9 +163,17 @@
       "A majestic lion with a flowing mane made of cannabis leaves, regal sticker art",
       "A pattern of cannabis-infused gummy bears in rainbow colors, modern edibles sticker",
       "A single perfect cannabis bud with morning dew drops, macro photography sticker",
-      "'Inhale the Good Vibes' typography with cannabis leaf accents, motivational sticker"
+      "'Inhale the Good Vibes' typography with cannabis leaf accents, motivational sticker",
+      "A chill sloth hanging from a vibrant cannabis branch, blissful expression, cartoon sticker art",
+      "A mystical crystal bong radiating a cosmic nebula of pink and purple smoke, fantasy sticker illustration",
+      "A 70s-style lava lamp with glowing green cannabis leaves floating inside, psychedelic retro sticker",
+      "A kawaii-style smiling cannabis-infused chocolate bar taking a bite of itself, cute Japanese art sticker",
+      "An astronaut's helmet reflecting a vibrant field of cannabis plants on Mars, surreal sci-fi sticker",
+      "A delicate hummingbird with intricate cannabis leaf wings, minimalist line art sticker",
+      "A 'Certificate of Chill' award with two cannabis leaves shaking hands, funny graphic design sticker",
+      "A cross-section of a beehive with honeycombs full of golden THC oil, detailed nature illustration sticker"
     ];
-    let lastPrompt='';
+    let usedPrompts = new Set();
     const $=sel=>document.querySelector(sel);
     const loader=$('#loader'),sticker=$('#sticker'),promptUnder=$('#promptUnder'),btn=$('#newBtn'),toast=$('#toast');
 
@@ -166,10 +183,17 @@
       setTimeout(()=>toast.classList.remove('show'),3000);
     }
     function uniquePrompt(){
+      if (usedPrompts.size >= basePrompts.length) {
+        usedPrompts.clear();
+      }
+      
       let p;
-      do{p=basePrompts[Math.floor(Math.random()*basePrompts.length)];}
-      while(p===lastPrompt&&basePrompts.length>1);
-      lastPrompt=p;return p;
+      do {
+        p = basePrompts[Math.floor(Math.random() * basePrompts.length)];
+      } while (usedPrompts.has(p) && usedPrompts.size < basePrompts.length);
+      
+      usedPrompts.add(p);
+      return p;
     }
     async function generate(){
       loader.classList.remove('hidden');
@@ -177,38 +201,38 @@
       promptUnder.classList.add('hidden');
       btn.disabled=true;
 
-      const raw=uniquePrompt();
-      const prompt=`${raw}, high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration`;
+      const raw = uniquePrompt();
+      const prompt = `${raw}, high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration`;
 
       try{
-        const res=await fetch('/api/generate-sticker',{
+        const res = await fetch('/api/generate-sticker',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({prompt})
         });
-        const data=await res.json();
-        if(!res.ok||!data.success) throw new Error(data.error||'Generation failed');
+        const data = await res.json();
+        if(!res.ok || !data.success) throw new Error(data.error || 'Generation failed');
 
-        sticker.src=`data:image/jpeg;base64,${data.image}`;
-        await new Promise((res,rej)=>{
-          sticker.onload=()=>res();
-          sticker.onerror=()=>rej(new Error('Image failed to load'));
+        sticker.src = `data:image/jpeg;base64,${data.image}`;
+        await new Promise((resolve, reject) => {
+          sticker.onload = () => resolve();
+          sticker.onerror = () => reject(new Error('Image failed to load'));
         });
 
         loader.classList.add('hidden');
         sticker.classList.remove('hidden');
-        promptUnder.textContent=`“${raw}”`;
+        promptUnder.textContent = `“${raw}”`;
         promptUnder.classList.remove('hidden');
-      }catch(e){
+      } catch(e){
         console.error(e);
         loader.classList.add('hidden');
-        toastMsg(e.message,true);
-      }finally{
-        btn.disabled=false;
+        toastMsg(e.message, true);
+      } finally{
+        btn.disabled = false;
       }
     }
-    btn.addEventListener('click',generate);
-    window.addEventListener('load',generate);
+    btn.addEventListener('click', generate);
+    window.addEventListener('load', generate);
   </script>
 </body>
 </html>
