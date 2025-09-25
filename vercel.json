@@ -1,7 +1,3 @@
-# Project Files
-
-## File: vercel.json
-```json
 {
   "functions": {
     "api/generate-sticker.js": { "maxDuration": 30 }
