@@ -16,7 +16,7 @@
     }
     #smoke{
       position:fixed;inset:0;z-index:0;
-      background:#fff;overflow:hidden;transition:opacity .8s ease;
+      background:#fff;overflow:hidden;
     }
     #smoke canvas{display:block;width:100%;height:100%}
     .loader{
@@ -24,6 +24,11 @@
       border-left-color:#ec4899;border-radius:50%;animation:spin 1s linear infinite;
     }
     @keyframes spin{to{transform:rotate(360deg)}}
+    #stickerWrap{
+      position:relative;z-index:10;
+      flex:1;display:flex;align-items:center;justify-content:center;
+      padding:1rem;
+    }
     #sticker{
       max-width:80vw;max-height:55vh;height:auto;object-fit:contain;
       filter:drop-shadow(0 25px 25px rgba(0,0,0,.3));
@@ -49,103 +54,66 @@
 <body>
   <div id="smoke"></div>
 
-  <div class="relative z-10 flex flex-col h-full">
-    <header class="w-full text-center pt-12 md:pt-16 px-4">
-      <h1 class="text-[clamp(2.5rem,10vw,5rem)] font-extrabold text-black leading-tight">Weed Sticker Generator</h1>
-      <p class="text-black text-base md:text-lg mt-2">Never the same sticker twice</p>
-    </header>
+  <header class="relative z-10 w-full text-center pt-10 md:pt-12 px-4">
+    <h1 class="text-[clamp(2.5rem,10vw,5rem)] font-extrabold text-black leading-tight">Weed Sticker Generator</h1>
+    <p class="text-black text-base md:text-lg mt-1">Never the same sticker twice</p>
+  </header>
 
-    <main class="flex-grow flex flex-col justify-center items-center p-4">
-      <div class="flex-grow flex justify-center items-center flex-col">
-        <div id="loader" class="flex flex-col items-center gap-4 text-center p-8 rounded-2xl">
-          <div class="loader"></div>
-          <p class="text-base text-black font-medium">Crafting your sticker…</p>
-          <p id="prompt" class="text-sm text-black italic max-w-[280px]"></p>
-        </div>
-        <img id="sticker" class="hidden" alt="AI-generated weed sticker">
-      </div>
-      <button id="newBtn" class="generate-btn mt-8" aria-label="Generate new sticker">New Sticker</button>
-    </main>
+  <div id="stickerWrap">
+    <div id="loader" class="flex flex-col items-center gap-4 text-center">
+      <div class="loader"></div>
+      <p class="text-base text-black font-medium">Crafting your sticker…</p>
+      <p id="prompt" class="text-sm text-black italic max-w-[280px]"></p>
+    </div>
+    <img id="sticker" class="hidden" alt="AI-generated weed sticker">
+  </div>
 
-    <footer class="w-full text-center text-xs text-black py-4 px-4">Images are AI-generated for demonstration · Developed with ❤️</footer>
+  <div class="relative z-10 w-full flex justify-center pb-6">
+    <button id="newBtn" class="generate-btn" aria-label="Generate new sticker">New Sticker</button>
   </div>
 
   <div id="toast" class="toast"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script type="module">
-    /* ---------- Smoke Shader ---------- */
-    let scene,camera,renderer,material,uniforms,smokeEl;
-    const vert=`
-      varying vec2 vUv;
-      void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
-    const frag=`
-      varying vec2 vUv;
-      uniform float u_time;
-      uniform vec2 u_resolution;
-      vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
-      vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
-      vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}
-      float snoise(vec2 v){
-        const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);
-        vec2 i=floor(v+dot(v,C.yy));
-        vec2 x0=v-i+dot(i,C.xx);
-        vec2 i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);
-        vec4 x12=x0.xyxy+C.xxzz;
-        x12.xy-=i1;
-        i=mod289(i);
-        vec3 p=permute(permute(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));
-        vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);
-        m=m*m;m=m*m;
-        vec3 x=2.0*fract(p*C.www)-1.0;
-        vec3 h=abs(x)-0.5;
-        vec3 ox=floor(x+0.5);
-        vec3 a0=x-ox;
-        m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);
-        vec3 g;
-        g.x=a0.x*x0.x+h.x*x0.y;
-        g.yz=a0.yz*x12.xz+h.yz*x12.yw;
-        return 130.0*dot(m,g);
-      }
-      float fbm(vec2 st){
-        float value=0.0;float amplitude=0.5;
-        for(int i=0;i<6;i++){value+=amplitude*snoise(st);st*=2.0;amplitude*=0.5;}
-        return value;
-      }
-      void main(){
-        vec2 uv=vUv;float time=u_time*0.09;
-        vec2 smokeUv=uv;smokeUv.y-=time*0.4;
-        float turbulence1=fbm(smokeUv*2.0+time);
-        float turbulence2=fbm(smokeUv*4.0-time*0.5);
-        smokeUv.x+=turbulence1*0.15;smokeUv.y+=turbulence2*0.1;
-        float swirl=fbm(smokeUv*3.0+time*2.0);smokeUv+=swirl*0.08;
-        float noise1=fbm(smokeUv*1.5);float noise2=fbm(smokeUv*3.0+time);float noise3=fbm(smokeUv*6.0-time*0.8);
-        float finalNoise=(noise1*0.5+noise2*0.3+noise3*0.2);
-
-        vec3 color1=vec3(0.96,0.51,0.75);
-        vec3 color2=vec3(0.88,0.27,0.53);
-        vec3 color3=vec3(0.98,0.71,0.82);
-        vec3 color4=vec3(0.7,0.1,0.3);
-
-        vec3 finalColor=mix(color1,color2,smoothstep(-0.5,0.5,finalNoise));
-        finalColor=mix(finalColor,color3,smoothstep(0.0,1.0,noise2));
-        finalColor=mix(finalColor,color4,smoothstep(-1.0,0.0,noise1));
-        float brightness=0.25+0.7*(finalNoise+1.0)*0.5;finalColor*=brightness;
-        float fadeY=smoothstep(0.0,0.4,uv.y)*smoothstep(1.0,0.6,uv.y);
-        float fadeX=smoothstep(0.0,0.2,uv.x)*smoothstep(1.0,0.8,uv.x);
-        float alpha=(finalNoise+1.0)*0.5;alpha*=fadeY*fadeX;alpha=clamp(alpha,0.0,0.95);
-        gl_FragColor=vec4(finalColor,alpha);
-      }`;
+    /* ---------- Pink-Kush Smoke ---------- */
+    let scene,camera,renderer,material,uniforms;
+    const vert=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+    const frag=`varying vec2 vUv;uniform float u_time;uniform vec2 u_resolution;
+    vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
+    vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}
+    float snoise(vec2 v){const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);
+    vec2 i=floor(v+dot(v,C.yy));vec2 x0=v-i+dot(i,C.xx);
+    vec2 i1=(x0.x>x0.y)?vec2(1.0,0.0):vec2(0.0,1.0);vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;
+    i=mod289(i);vec3 p=permute(permute(i.y+vec3(0.0,i1.y,1.0))+i.x+vec3(0.0,i1.x,1.0));
+    vec3 m=max(0.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.0);m=m*m;m=m*m;
+    vec3 x=2.0*fract(p*C.www)-1.0;vec3 h=abs(x)-0.5;vec3 ox=floor(x+0.5);vec3 a0=x-ox;
+    m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);vec3 g;
+    g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;return 130.0*dot(m,g);}
+    float fbm(vec2 st){float value=0.0,amp=0.5;for(int i=0;i<6;i++){value+=amp*snoise(st);st*=2.0;amp*=0.5;}return value;}
+    void main(){
+      vec2 uv=vUv;float t=u_time*0.09;
+      vec2 suv=uv;suv.y-=t*0.4;
+      float n1=fbm(suv*2.0+t),n2=fbm(suv*4.0-t*0.5);
+      suv.x+=n1*0.15;suv.y+=n2*0.1;
+      float sw=fbm(suv*3.0+t*2.0);suv+=sw*0.08;
+      float fn=(fbm(suv*1.5)*0.5+fbm(suv*3.0+t)*0.3+fbm(suv*6.0-t*0.8)*0.2);
+      vec3 c1=vec3(0.96,0.51,0.75),c2=vec3(0.88,0.27,0.53),c3=vec3(0.98,0.71,0.82),c4=vec3(0.7,0.1,0.3);
+      vec3 col=mix(c1,c2,smoothstep(-0.5,0.5,fn));col=mix(col,c3,smoothstep(0.0,1.0,fbm(suv*3.0+t)));
+      col=mix(col,c4,smoothstep(-1.0,0.0,fbm(suv*1.5)));col*=0.25+0.7*(fn+1.0)*0.5;
+      float fy=smoothstep(0.0,0.4,uv.y)*smoothstep(1.0,0.6,uv.y),fx=smoothstep(0.0,0.2,uv.x)*smoothstep(1.0,0.8,uv.x);
+      float a=(fn+1.0)*0.5*fy*fx;a=clamp(a,0.0,0.95);gl_FragColor=vec4(col,a);
+    }`;
 
     function initSmoke(){
-      smokeEl=document.getElementById('smoke');
+      const el=document.getElementById('smoke');
       scene=new THREE.Scene();
       camera=new THREE.OrthographicCamera(-1,1,1,-1,0.1,10);
       camera.position.z=1;
       renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
       renderer.setSize(window.innerWidth,window.innerHeight);
       renderer.setClearColor(0xffffff,1);
-      smokeEl.appendChild(renderer.domElement);
+      el.appendChild(renderer.domElement);
       const geom=new THREE.PlaneGeometry(2,2);
       uniforms={u_time:{value:0},u_resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)}};
       material=new THREE.ShaderMaterial({uniforms,vertexShader:vert,fragmentShader:frag,transparent:true,blending:THREE.NormalBlending});
@@ -162,7 +130,7 @@
     }
     initSmoke();animate();
 
-    /* ---------- Sticker Logic ---------- */
+    /* ---------- Sticker Generation ---------- */
     const basePrompts=[
       "A friendly cartoon cannabis leaf wearing sunglasses, vibrant sticker art",
       "A glass mason jar filled with frosty pink cannabis buds, premium dispensary sticker",
@@ -179,7 +147,7 @@
 
     function toastMsg(msg,err=false){
       toast.textContent=msg;toast.classList.add('show');
-      if(err) toast.style.background='#e11d48'; else toast.style.background='#000';
+      toast.style.background=err?'#e11d48':'#000';
       setTimeout(()=>toast.classList.remove('show'),3000);
     }
     function uniquePrompt(){
@@ -192,7 +160,6 @@
       loader.classList.remove('hidden');
       sticker.classList.add('hidden');
       btn.disabled=true;
-      smokeEl.style.opacity=1;
 
       const raw=uniquePrompt();
       promptEl.textContent=`“${raw}”`;
@@ -215,7 +182,6 @@
 
         loader.classList.add('hidden');
         sticker.classList.remove('hidden');
-        smokeEl.style.opacity=.25;
       }catch(e){
         console.error(e);
         loader.classList.add('hidden');
