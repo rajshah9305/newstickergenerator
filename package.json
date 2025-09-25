@@ -1,12 +1,13 @@
 {
   "name": "weed-sticker-generator",
-  "version": "1.0.0",
-  "description": "AI-powered weed sticker generator (white theme)",
+  "version": "1.1.0",
+  "description": "AI-powered weed sticker generator – Node 22, sticker-only view, shows prompt",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev",
-    "start": "vercel dev"
+    "dev": "vercel dev"
   },
   "license": "MIT",
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=22.0.0"
+  }
 }
