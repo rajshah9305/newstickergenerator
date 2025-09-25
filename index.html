@@ -3,13 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Weed Sticker Generator</title>
+  <title>Weed Sticker Generator – Pink Smoke</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* ----  PINK SMOKE BACKDROP  ---- */
+    #smoke {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: #000;
+      overflow: hidden;
+    }
+    #smoke canvas { display: block; width: 100%; height: 100%; }
+
     /* ----  LOADER  ---- */
     .loader {
       border: 4px solid rgba(0,0,0,.15);
-      border-left-color: #16a34a;
+      border-left-color: #ec4899; /* pink-500 */
       border-radius: 50%;
       width: 56px; height: 56px;
       animation: spin 1s linear infinite;
@@ -17,80 +29,186 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ----  LAYOUT  ---- */
-    body { min-height: 100vh; display: flex; flex-direction: column; }
+    html, body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: #fff; }
     main { flex: 1; }
-
-    /* push hero DOWN */
-    header { margin-top: clamp(4vh, 6vh, 12vh); }
-
-    /* pull footer UP */
+    header { margin-top: clamp(3vh, 5vh, 10vh); }
     footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
   </style>
 </head>
 
-<body class="bg-white text-gray-800">
-  <!-- HERO – lowered & bigger -->
-  <header class="w-full px-4 pt-4 pb-2 text-center">
-    <h1 class="font-extrabold text-green-600 drop-shadow-sm"
-        style="font-size: clamp(2.8rem, 9vw, 5.5rem); line-height: 1.02;">
+<body>
+  <!-- pink smoke rising from bottom -->
+  <div id="smoke"><canvas id="smokeCanvas"></canvas></div>
+
+  <!-- HERO -->
+  <header class="relative z-10 w-full px-4 pt-4 pb-2 text-center">
+    <h1 class="font-extrabold text-white drop-shadow-lg"
+        style="font-size: clamp(2.5rem, 8vw, 5rem); line-height: 1.02;">
       Weed Sticker Generator
     </h1>
-    <p class="text-gray-600 text-sm mt-2">Refresh for a new sticker</p>
+    <p class="text-gray-300 text-sm mt-2">Never the same sticker twice</p>
   </header>
 
-  <!-- MAIN – natural image size -->
-  <main class="grid place-items-center px-4 pb-6">
-    <div id="card" class="w-auto max-w-[95vw] max-h-[75vh] bg-gray-50 rounded-2xl shadow p-4 grid place-items-center">
+  <!-- MAIN CARD -->
+  <main class="relative z-10 grid place-items-center px-4 pb-6">
+    <div id="card" class="w-auto max-w-[95vw] max-h-[75vh] bg-white rounded-2xl shadow-2xl p-4 grid place-items-center">
       <div id="loader" class="flex flex-col items-center gap-3">
         <div class="loader"></div>
-        <p class="font-medium text-sm text-gray-600">Generating image…</p>
-        <p id="prompt" class="text-xs text-gray-400 italic px-4 text-center"></p>
+        <p class="font-medium text-sm text-gray-700">Crafting your sticker…</p>
+        <p id="prompt" class="text-xs text-gray-500 italic px-4 text-center"></p>
       </div>
       <img id="sticker" class="hidden max-w-full max-h-full object-contain rounded-xl" alt="weed sticker">
     </div>
+    <button id="newBtn" onclick="generate()"
+            class="mt-5 px-6 py-2 bg-pink-600 text-white rounded-full shadow hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed">
+      New Sticker
+    </button>
   </main>
 
-  <!-- FOOTER – lifted & darker -->
-  <footer class="text-center text-xs text-gray-700 py-4" style="margin-bottom: clamp(2vh, 4vh, 8vh);">
+  <!-- FOOTER -->
+  <footer class="relative z-10 text-center text-xs text-gray-400 py-4" style="margin-bottom: clamp(2vh, 4vh, 8vh);">
     Images are AI-generated · Developed by RAJ with ❤️
   </footer>
 
-  <script>
-    const prompts = [
-      "A beautiful glass jar full of frosty cannabis buds, sticker art, die-cut",
-      "A vibrant, cartoon-style cannabis leaf with a smiling face, sticker art",
-      "A single frosty cannabis bud, sticker style, white background",
-      "A minimalist line-art bong, clean sticker design",
-      "A cute kawaii joint character with big eyes, sticker art",
-      "Psychedelic colorful cannabis plant, die-cut sticker",
-      "Vintage seed packet for 'Cosmic Kush', sticker illustration",
-      "Happy stoned alien smoking a joint, cartoon sticker",
-      "Cannabis-infused gummy bear sticker, vibrant colors",
-      "'Good Vibes' text with cannabis leaf, retro 70s sticker",
-      "Majestic lion with mane made of cannabis leaves, sticker art",
-      "Skull with cannabis leaves growing out, detailed sticker"
-    ];
+  <!-- ------------------------------------------------------------------ -->
+  <!--                     THREE.JS  –  PINK-KUSH SMOKE                   -->
+  <!-- ------------------------------------------------------------------ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  </script>
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    varying vec2 vUv;
+    uniform float u_time;
 
-    const used = new Set();
+    float random(vec2 st) {
+      return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+    }
+    float noise(vec2 st) {
+      vec2 i = floor(st), f = fract(st);
+      float a = random(i), b = random(i + vec2(1.0, 0.0)),
+            c = random(i + vec2(0.0, 1.0)), d = random(i + vec2(1.0, 1.0));
+      vec2 u = f * f * (3.0 - 2.0 * f);
+      return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+    }
+    float fbm(vec2 st) {
+      float value = 0.0, amplitude = .5, frequency = 0.;
+      for (int i = 0; i < 6; i++) {
+        value += amplitude * noise(st);
+        st *= 2.; amplitude *= .5;
+      }
+      return value;
+    }
+
+    void main() {
+      vec2 uv = vUv;
+      float t = u_time * 0.05;
+      uv.y -= t; // rise from bottom
+      float turbulence = fbm(uv * 2.0);
+      uv.y += turbulence * 0.1;
+      uv.x += turbulence * 0.05;
+      float swirl = fbm(uv * 3.0 + t);
+      uv += swirl * 0.2;
+      float final_noise = fbm(uv * 2.5);
+      // pink colour
+      vec3 color = vec3(final_noise * 1.2, final_noise * 0.3, final_noise * 0.9);
+      float vignette = distance(vUv, vec2(0.5, 0.5));
+      color *= 1.0 - vignette * 0.3;
+      gl_FragColor = vec4(color, final_noise * 0.8);
+    }
+  </script>
+
+  <script>
+    /* ----------  THREE.JS BOILERPLATE  ---------- */
+    let scene, camera, renderer, plane, material, uniforms;
+    function initSmoke() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 1;
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.getElementById('smoke').appendChild(renderer.domElement);
+
+      const geometry = new THREE.PlaneBufferGeometry(2, 2);
+      uniforms = {
+        u_time: { type: "f", value: 1.0 },
+        u_resolution: { type: "v2", value: new THREE.Vector2() },
+        u_mouse: { type: "v2", value: new THREE.Vector2() }
+      };
+
+      material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
+        transparent: true
+      });
+
+      plane = new THREE.Mesh(geometry, material);
+      scene.add(plane);
+
+      window.addEventListener('resize', onResize, false);
+      onResize();
+    }
+    function onResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      uniforms.u_resolution.value.x = renderer.domElement.width;
+      uniforms.u_resolution.value.y = renderer.domElement.height;
+    }
+    function animateSmoke() {
+      requestAnimationFrame(animateSmoke);
+      uniforms.u_time.value += 0.05;
+      renderer.render(scene, camera);
+    }
+    initSmoke();
+    animateSmoke();
+
+    /* ----------  STICKER LOGIC  ---------- */
+    const basePrompts = [
+      "glass jar full of frosty cannabis buds, sticker art, die-cut",
+      "cartoon cannabis leaf with smiling face, sticker art",
+      "single frosty cannabis bud, sticker style, white background",
+      "minimalist line-art bong, clean sticker design",
+      "cute kawaii joint character with big eyes, sticker art",
+      "psychedelic colorful cannabis plant, die-cut sticker",
+      "retro seed packet for 'Cosmic Kush', sticker illustration",
+      "happy stoned alien smoking a joint, cartoon sticker",
+      "cannabis-infused gummy bear sticker, vibrant colors",
+      "'Good Vibes' text with cannabis leaf, 70s retro sticker",
+      "majestic lion with mane made of cannabis leaves, sticker art",
+      "skull with cannabis leaves growing out, detailed sticker"
+    ];
+    const styleBoost = "high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration";
+
+    const seenImages = new Set();
+    let lastPrompt = '';
+
     function uniquePrompt() {
       let p;
-      do { p = prompts[Math.floor(Math.random() * prompts.length)]; }
-      while (used.has(p) && used.size < prompts.length);
-      if (used.size === prompts.length) used.clear();
-      used.add(p);
+      do { p = basePrompts[Math.floor(Math.random() * basePrompts.length)]; }
+      while (p === lastPrompt && basePrompts.length > 1);
+      lastPrompt = p;
       return p;
     }
 
     async function generate() {
-      const loader = document.getElementById('loader');
+      const loader  = document.getElementById('loader');
       const sticker = document.getElementById('sticker');
-      const promptEl = document.getElementById('prompt');
+      const promptEl= document.getElementById('prompt');
+      const btn     = document.getElementById('newBtn');
 
       sticker.classList.add('hidden');
       loader.classList.remove('hidden');
+      btn.disabled = true;
 
-      const prompt = uniquePrompt();
-      promptEl.textContent = `"${prompt}"`;
+      const rawPrompt = uniquePrompt();
+      const prompt    = `${rawPrompt}, ${styleBoost}`;
+      promptEl.textContent = `"${rawPrompt}"`;
 
       try {
         const res = await fetch('/api/generate-sticker', {
@@ -99,16 +217,24 @@
           body: JSON.stringify({ prompt })
         });
         const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Unknown');
+        if (!data.success) throw new Error(data.error || 'Server error');
+        if (seenImages.has(data.image)) { /* collision → retry once */ return generate(); }
+        seenImages.add(data.image);
 
         sticker.src = `data:image/png;base64,${data.image}`;
-        sticker.onload = () => { loader.classList.add('hidden'); sticker.classList.remove('hidden'); };
-        sticker.onerror = () => { throw new Error('Image load failed'); };
+        sticker.onload = () => {
+          loader.classList.add('hidden');
+          sticker.classList.remove('hidden');
+          btn.disabled = false;
+        };
+        sticker.onerror = () => { throw new Error('Image broken'); };
       } catch (e) {
-        loader.innerHTML = `<p class="text-red-500 text-sm">Failed: ${e.message}<br><small class="text-xs">Refresh to retry</small></p>`;
+        loader.innerHTML = `<p class="text-red-500 text-sm">Failed: ${e.message}<br><small class="text-xs">Click "New Sticker" to retry</small></p>`;
+        btn.disabled = false;
       }
     }
 
+    /* initial load */
     generate();
   </script>
 </body>
