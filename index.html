@@ -14,54 +14,77 @@
       background:#fff;color:#000;font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
       -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
     }
-    #smoke{position:fixed;inset:0;z-index:0;background:#fff;overflow:hidden}
+    #smoke{
+      position:fixed;inset:0;z-index:0;
+      background:#fff;overflow:hidden;
+    }
     #smoke canvas{display:block;width:100%;height:100%}
-    .loader{width:56px;height:56px;border:4px solid rgba(0,0,0,.1);border-left-color:#ec4899;border-radius:50%;animation:spin 1s linear infinite}
+    .loader{
+      width:56px;height:56px;border:4px solid rgba(0,0,0,.1);
+      border-left-color:#ec4899;border-radius:50%;animation:spin 1s linear infinite;
+    }
     @keyframes spin{to{transform:rotate(360deg)}}
-    #stickerWrap{position:relative;z-index:10;flex:1;display:flex;align-items:center;justify-content:center;padding:1rem}
-    #sticker{max-width:80vw;max-height:55vh;height:auto;object-fit:contain;filter:drop-shadow(0 25px 25px rgba(0,0,0,.3));transition:opacity .4s ease,transform .4s ease}
-    #sticker.hidden{opacity:0;transform:scale(.96)}
-    #smoke.dim{filter:brightness(.7) contrast(.8);opacity:.8;transition:filter .5s ease,opacity .5s ease;}
-    .generate-btn{background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:#fff;padding:.875rem 2.5rem;border-radius:9999px;font-weight:600;box-shadow:0 10px 25px -5px rgba(236,72,153,.3);transition:all .3s ease;border:none;cursor:pointer}
+    #stickerWrap{
+      position:relative;z-index:10;
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:1rem;
+    }
+    #sticker{
+      max-width:80vw;max-height:55vh;height:auto;object-fit:contain;
+      filter:drop-shadow(0 25px 25px rgba(0,0,0,.3));
+      transition:opacity .5s ease,transform .5s ease;
+    }
+    #sticker.hidden{opacity:0;transform:scale(.9)}
+    #promptUnder{
+      margin-top:.75rem;text-align:center;
+      font-size:.875rem;font-style:italic;color:#000;
+      max-width:320px;
+    }
+    .generate-btn{
+      background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);
+      color:#fff;padding:.875rem 2.5rem;border-radius:9999px;font-weight:600;
+      box-shadow:0 10px 25px -5px rgba(236,72,153,.3);
+      transition:all .3s ease;border:none;cursor:pointer;
+    }
     .generate-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 15px 35px -5px rgba(236,72,153,.4)}
     .generate-btn:disabled{opacity:.5;cursor:not-allowed}
-    .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:.75rem 1.25rem;border-radius:9999px;font-size:.875rem;opacity:0;transition:opacity .3s ease;pointer-events:none;z-index:50}
-    .toast.show{opacity:1}
-    /* Respect prefers-reduced-motion */
-    @media (prefers-reduced-motion: reduce){
-      .loader{animation:none;border-left-color:#ec4899}
-      #sticker{transition:none}
+    .toast{
+      position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
+      background:#000;color:#fff;padding:.75rem 1.25rem;border-radius:9999px;font-size:.875rem;
+      opacity:0;transition:opacity .3s ease;pointer-events:none;z-index:50;
     }
+    .toast.show{opacity:1}
   </style>
 </head>
 <body>
-  <div id="smoke" aria-hidden="true"></div>
+  <div id="smoke"></div>
 
   <header class="relative z-10 w-full text-center pt-10 md:pt-12 px-4">
-    <h1 class="text-[clamp(2.2rem,8vw,4.25rem)] font-extrabold text-black leading-tight">Weed Sticker Generator</h1>
+    <h1 class="text-[clamp(2.5rem,10vw,5rem)] font-extrabold text-black leading-tight">Weed Sticker Generator</h1>
     <p class="text-black text-base md:text-lg mt-1">Never the same sticker twice</p>
   </header>
 
-  <main id="stickerWrap" role="main" aria-live="polite">
-    <div id="loader" class="flex flex-col items-center gap-4 text-center" aria-busy="true">
-      <div class="loader" aria-hidden="true"></div>
+  <div id="stickerWrap">
+    <div id="loader" class="flex flex-col items-center gap-4 text-center">
+      <div class="loader"></div>
       <p class="text-base text-black font-medium">Crafting your sticker…</p>
-      <p id="prompt" class="text-sm text-black italic max-w-[280px]"></p>
     </div>
     <img id="sticker" class="hidden" alt="AI-generated weed sticker">
-  </main>
+    <p id="promptUnder" class="hidden"></p>
+  </div>
 
   <div class="relative z-10 w-full flex justify-center pb-6">
     <button id="newBtn" class="generate-btn" aria-label="Generate new sticker">New Sticker</button>
   </div>
 
-  <div id="toast" class="toast" role="status" aria-live="assertive"></div>
+  <div id="toast" class="toast"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script type="module">
     /* ---------- Pink-Kush Smoke ---------- */
     let scene,camera,renderer,material,uniforms;
-    const vert=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`    const frag=`varying vec2 vUv;uniform float u_time;uniform vec2 u_resolution;
+    const vert=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
+    const frag=`varying vec2 vUv;uniform float u_time;uniform vec2 u_resolution;
     vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
     vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}
     float snoise(vec2 v){const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);
@@ -72,69 +95,47 @@
     vec3 x=2.0*fract(p*C.www)-1.0;vec3 h=abs(x)-0.5;vec3 ox=floor(x+0.5);vec3 a0=x-ox;
     m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);vec3 g;
     g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;return 130.0*dot(m,g);}
-    float fbm(vec2 st){float value=0.0,amp=0.5;for(int i=0;i<5;i++){value+=amp*snoise(st);st*=2.0;amp*=0.5;}return value;}
+    float fbm(vec2 st){float value=0.0,amp=0.5;for(int i=0;i<6;i++){value+=amp*snoise(st);st*=2.0;amp*=0.5;}return value;}
     void main(){
       vec2 uv=vUv;float t=u_time*0.09;
-      vec2 suv=uv;suv.y-=(t*0.35); // Emphasize upward motion
-      float n1=fbm(suv*2.0+t),n2=fbm(suv*3.0-t*0.5);
-      suv.x+=n1*0.12;suv.y+=n2*0.08;
-      float sw=fbm(suv*2.5+t*2.0);suv+=sw*0.06;
-      float fn=(fbm(suv*1.2)*0.55+fbm(suv*2.5+t)*0.3+fbm(suv*4.0-t*0.8)*0.15);
-      // Darker base palette with pink highlights
-      vec3 c1=vec3(0.1,0.0,0.05); // Darker base
-      vec3 c2=vec3(0.2,0.0,0.1);  // Darker mid
-      vec3 c3=vec3(0.9,0.2,0.5);  // Pink highlight
-      vec3 c4=vec3(0.4,0.0,0.2);  // Darker accent
-      vec3 col=mix(c1,c2,smoothstep(-0.5,0.5,fn));
-      col=mix(col,c3,smoothstep(0.0,1.0,fbm(suv*3.0+t)));
-      col=mix(col,c4,smoothstep(-1.0,0.0,fbm(suv*1.5)));
-      col*=0.25+0.7*(fn+1.0)*0.5;
-      // Shape alpha stronger at bottom, fading toward top and edges
-      float fy=smoothstep(0.0,0.6,uv.y)*smoothstep(1.0,0.7,uv.y); // Stronger at bottom, fades less abruptly at top
-      float fx=smoothstep(0.0,0.3,uv.x)*smoothstep(1.0,0.7,uv.x); // Fades toward edges
-      float a=(fn+1.0)*0.5*fy*fx;
-      a=clamp(a,0.0,0.95); // Slightly higher max alpha
-      gl_FragColor=vec4(col,a);
+      vec2 suv=uv;suv.y-=t*0.4;
+      float n1=fbm(suv*2.0+t),n2=fbm(suv*4.0-t*0.5);
+      suv.x+=n1*0.15;suv.y+=n2*0.1;
+      float sw=fbm(suv*3.0+t*2.0);suv+=sw*0.08;
+      float fn=(fbm(suv*1.5)*0.5+fbm(suv*3.0+t)*0.3+fbm(suv*6.0-t*0.8)*0.2);
+      vec3 c1=vec3(0.96,0.51,0.75),c2=vec3(0.88,0.27,0.53),c3=vec3(0.98,0.71,0.82),c4=vec3(0.7,0.1,0.3);
+      vec3 col=mix(c1,c2,smoothstep(-0.5,0.5,fn));col=mix(col,c3,smoothstep(0.0,1.0,fbm(suv*3.0+t)));
+      col=mix(col,c4,smoothstep(-1.0,0.0,fbm(suv*1.5)));col*=0.25+0.7*(fn+1.0)*0.5;
+      float fy=smoothstep(0.0,0.4,uv.y)*smoothstep(1.0,0.6,uv.y),fx=smoothstep(0.0,0.2,uv.x)*smoothstep(1.0,0.8,uv.x);
+      float a=(fn+1.0)*0.5*fy*fx;a=clamp(a,0.0,0.95);gl_FragColor=vec4(col,a);
     }`;
 
     function initSmoke(){
-      try{
-        const el=document.getElementById('smoke');
-        scene=new THREE.Scene();
-        camera=new THREE.OrthographicCamera(-1,1,1,-1,0.1,10);
-        camera.position.z=1;
-        const powerPref = /Mobi|Android/i.test(navigator.userAgent) ? 'low-power' : 'high-performance';
-        renderer=new THREE.WebGLRenderer({antialias:false,alpha:true,powerPreference:powerPref,precision:'mediump'});
-        renderer.setSize(window.innerWidth,window.innerHeight,false);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-        renderer.setClearColor(0xffffff,1);
-        el.appendChild(renderer.domElement);
-        const geom=new THREE.PlaneGeometry(2,2);
-        uniforms={u_time:{value:0},u_resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)}};
-        material=new THREE.ShaderMaterial({uniforms,vertexShader:vert,fragmentShader:frag,transparent:true,blending:THREE.NormalBlending,depthWrite:false});
-        scene.add(new THREE.Mesh(geom,material));
-        window.addEventListener('resize',()=>{
-          const w=window.innerWidth,h=window.innerHeight;
-          renderer.setSize(w,h,false);
-          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-          uniforms.u_resolution.value.set(w,h);
-        },{passive:true});
-      }catch(e){
-        console.warn('Smoke init failed:',e);
-        document.getElementById('smoke').style.display='none';
-      }
+      const el=document.getElementById('smoke');
+      scene=new THREE.Scene();
+      camera=new THREE.OrthographicCamera(-1,1,1,-1,0.1,10);
+      camera.position.z=1;
+      renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+      renderer.setSize(window.innerWidth,window.innerHeight);
+      renderer.setClearColor(0xffffff,1);
+      el.appendChild(renderer.domElement);
+      const geom=new THREE.PlaneGeometry(2,2);
+      uniforms={u_time:{value:0},u_resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)}};
+      material=new THREE.ShaderMaterial({uniforms,vertexShader:vert,fragmentShader:frag,transparent:true,blending:THREE.NormalBlending});
+      scene.add(new THREE.Mesh(geom,material));
+      window.addEventListener('resize',()=>{
+        const w=window.innerWidth,h=window.innerHeight;
+        renderer.setSize(w,h);uniforms.u_resolution.value.set(w,h);
+      });
     }
-    let rafId;
     function animate(){
-      uniforms && (uniforms.u_time.value+=0.09);
-      renderer && scene && camera && renderer.render(scene,camera);
-      rafId=requestAnimationFrame(animate);
+      requestAnimationFrame(animate);
+      uniforms.u_time.value+=0.09;
+      renderer.render(scene,camera);
     }
-    initSmoke();
-    rafId=requestAnimationFrame(animate);
-    window.addEventListener('beforeunload',()=>{ rafId && cancelAnimationFrame(rafId); });
+    initSmoke();animate();
 
-    /* ---------- Sticker Generation ---------- */
+    /* ---------- Sticker + Prompt ---------- */
     const basePrompts=[
       "A friendly cartoon cannabis leaf wearing sunglasses, vibrant sticker art",
       "A glass mason jar filled with frosty pink cannabis buds, premium dispensary sticker",
@@ -145,138 +146,59 @@
       "A single perfect cannabis bud with morning dew drops, macro photography sticker",
       "'Inhale the Good Vibes' typography with cannabis leaf accents, motivational sticker"
     ];
-    const usedHashes=new Set();
-    const USED_LIMIT=16;
-
     let lastPrompt='';
     const $=sel=>document.querySelector(sel);
-    const loader=$('#loader'),sticker=$('#sticker'),promptEl=$('#prompt'),btn=$('#newBtn'),toast=$('#toast');
+    const loader=$('#loader'),sticker=$('#sticker'),promptUnder=$('#promptUnder'),btn=$('#newBtn'),toast=$('#toast');
 
     function toastMsg(msg,err=false){
-      toast.textContent=msg;
-      toast.classList.add('show');
+      toast.textContent=msg;toast.classList.add('show');
       toast.style.background=err?'#e11d48':'#000';
-      setTimeout(()=>toast.classList.remove('show'),2500);
-    }
-    function hashPrompt(s){
-      // simple djb2
-      let h=5381; for(let i=0;i<s.length;i++) h=((h<<5)+h)+s.charCodeAt(i);
-      return (h>>>0).toString(36);
+      setTimeout(()=>toast.classList.remove('show'),3000);
     }
     function uniquePrompt(){
-      let attempts=0;
-      while(attempts<20){
-        const p=basePrompts[Math.floor(Math.random()*basePrompts.length)];
-        const full=`${p}, high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration`;
-        const h=hashPrompt(full);
-        if(!usedHashes.has(h) && p!==lastPrompt){
-          usedHashes.add(h);
-          if(usedHashes.size>USED_LIMIT){
-            // remove oldest entry
-            const first=[...usedHashes][0];
-            usedHashes.delete(first);
-          }
-          lastPrompt=p;
-          return { raw:p, full };
-        }
-        attempts++;
-      }
-      // fallback
-      const p=basePrompts[0];
-      return { raw:p, full: `${p}, high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration` };
+      let p;
+      do{p=basePrompts[Math.floor(Math.random()*basePrompts.length)];}
+      while(p===lastPrompt&&basePrompts.length>1);
+      lastPrompt=p;return p;
     }
+    async function generate(){
+      loader.classList.remove('hidden');
+      sticker.classList.add('hidden');
+      promptUnder.classList.add('hidden');
+      btn.disabled=true;
 
-    let inFlightCtrl=null;
+      const raw=uniquePrompt();
+      const prompt=`${raw}, high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration`;
 
-    async function fetchWithRetry(body, maxRetries=1){
-      let attempt=0, delay=600;
-      while(true){
-        if(inFlightCtrl) inFlightCtrl.abort();
-        inFlightCtrl=new AbortController();
-        try{
-          const res=await fetch('/api/generate-sticker',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify(body),
-            signal:inFlightCtrl.signal
-          });
-          const data=await res.json().catch(()=> ({}));
-          if(!res.ok || !data.success) {
-            const msg = data?.error || `Request failed (${res.status})`;
-            // If 429 or 5xx and we have retries, backoff
-            if((res.status===429 || (res.status>=500 && res.status<600)) && attempt<maxRetries){
-              await new Promise(r=>setTimeout(r, delay));
-              attempt++; delay*=2;
-              continue;
-            }
-            throw new Error(msg);
-          }
-          return data;
-        }catch(e){
-          if(e.name==='AbortError') throw e;
-          if(attempt<maxRetries){
-            await new Promise(r=>setTimeout(r, delay));
-            attempt++; delay*=2;
-            continue;
-          }
-          throw e;
-        }
-      }
-    }
+      try{
+        const res=await fetch('/api/generate-sticker',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({prompt})
+        });
+        const data=await res.json();
+        if(!res.ok||!data.success) throw new Error(data.error||'Generation failed');
 
-    function setLoading(state, label){
-      if(state){
-        loader.classList.remove('hidden');
-        loader.setAttribute('aria-busy','true');
-        sticker.classList.add('hidden');
-        btn.disabled=true;
-        if(label) promptEl.textContent=label;
-      }else{
+        sticker.src=`data:image/jpeg;base64,${data.image}`;
+        await new Promise((res,rej)=>{
+          sticker.onload=()=>res();
+          sticker.onerror=()=>rej(new Error('Image failed to load'));
+        });
+
         loader.classList.add('hidden');
-        loader.removeAttribute('aria-busy');
+        sticker.classList.remove('hidden');
+        promptUnder.textContent=`“${raw}”`;
+        promptUnder.classList.remove('hidden');
+      }catch(e){
+        console.error(e);
+        loader.classList.add('hidden');
+        toastMsg(e.message,true);
+      }finally{
         btn.disabled=false;
       }
     }
-
-    async function generate(){
-      try{
-        const { raw, full } = uniquePrompt();
-        const label=`“${raw}”`;
-        document.getElementById("smoke").classList.remove("dim");
-        setLoading(true, label);
-
-        const data=await fetchWithRetry({ prompt: full, size: 'md' }, 1);
-
-        const fmt = data.format && typeof data.format==='string' ? data.format : 'jpeg';
-        const src=`data:image/${fmt};base64,${data.image}`;
-
-        // Preload image reliably
-        await new Promise((resolve,reject)=>{
-          const img=new Image();
-          img.onload=()=>resolve();
-          img.onerror=()=>reject(new Error('Image failed to load'));
-          img.src=src;
-        });
-
-        sticker.src=src;
-        sticker.width = data.width || undefined;
-        sticker.height = data.height || undefined;
-
-        setLoading(false);
-        sticker.classList.remove("hidden");
-        document.getElementById("smoke").classList.add("dim");
-      }catch(e){
-        console.error(e);
-        setLoading(false);
-        if(e.name!=='AbortError') toastMsg(e.message || 'Generation failed', true);
-      }
-    }
-
-    btn.addEventListener('click', generate, { passive:true });
-    window.addEventListener('load', generate);
+    btn.addEventListener('click',generate);
+    window.addEventListener('load',generate);
   </script>
-  <footer class="relative z-10 w-full text-center py-4 text-xs text-black/60">
-    Images are AI generated • Developed by RAJ with ❤️
-  </footer>
 </body>
 </html>
