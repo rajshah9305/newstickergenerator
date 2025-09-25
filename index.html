@@ -1,239 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Generate unique AI-powered weed sticker designs using Google Gemini API">
-    <meta name="theme-color" content="#1e2025">
-    <title>Weed Sticker Generator</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .loader {
-            border: 4px solid rgba(255, 255, 255, 0.2);
-            border-left-color: #4ade80; /* green-400 */
-            border-radius: 50%;
-            width: 64px;
-            height: 64px;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weed Sticker Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; }
+    .loader {
+      border: 4px solid rgba(255,255,255,.2);
+      border-left-color: #4ade80;
+      border-radius: 50%;
+      width: 64px; height: 64px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
-<body class="bg-[#1e2025] text-gray-300 flex flex-col items-center justify-center min-h-screen p-4">
+<body class="bg-[#1e2025] text-gray-300 flex items-center justify-center min-h-screen p-4">
 
-    <div class="w-full max-w-md text-center">
-        <!-- Header -->
-        <header class="mb-6">
-            <h1 class="text-4xl sm:text-5xl font-bold text-green-400">Weed Sticker Generator</h1>
-            <p class="text-gray-400 mt-2">Refresh the page for a new sticker!</p>
-        </header>
+  <div class="w-full max-w-md text-center">
+    <!-- header -->
+    <h1 class="text-4xl font-bold text-green-400">Weed Sticker Generator</h1>
+    <p class="text-gray-400 mt-1 text-sm">Refresh the page for a new sticker!</p>
 
-        <!-- Image and Loader Container -->
-        <main id="generator-container" class="bg-[#2a2c33] p-4 rounded-lg shadow-lg w-full aspect-square flex items-center justify-center" role="main" aria-live="polite">
-            <!-- Loader -->
-            <div id="loader" class="text-center flex flex-col items-center justify-center space-y-4" role="status" aria-label="Generating sticker">
-                <div class="loader" aria-hidden="true"></div>
-                <p class="font-medium text-lg">Generating...</p>
-                <p id="prompt-display" class="text-sm text-gray-400 italic px-4"></p>
-            </div>
-            <!-- Image Display -->
-            <img id="sticker-image" src="" alt="AI-generated weed sticker" class="hidden w-full h-full object-contain rounded-md" loading="lazy" decoding="async"/>
-        </main>
-
-        <!-- Footer -->
-        <footer class="mt-6 text-xs text-gray-500">
-            <p>Powered by Gemini API. Images are AI-generated.</p>
-        </footer>
+    <!-- card -->
+    <div class="bg-[#2a2c33] mt-6 rounded-xl shadow-lg w-full aspect-square flex items-center justify-center">
+      <!-- loader -->
+      <div id="loader" class="flex flex-col items-center gap-3">
+        <div class="loader"></div>
+        <p class="font-medium">Generating...</p>
+        <p id="prompt" class="text-xs text-gray-400 italic px-4"></p>
+      </div>
+      <!-- image -->
+      <img id="sticker" class="hidden w-full h-full object-contain rounded-md" alt="AI weed sticker">
     </div>
 
-    <script>
-        const loader = document.getElementById('loader');
-        const stickerImage = document.getElementById('sticker-image');
-        const promptDisplay = document.getElementById('prompt-display');
+    <!-- footer -->
+    <footer class="mt-4 text-xs text-gray-500">Powered by Pollinations • Images are AI-generated</footer>
+  </div>
 
-        // --- Prompts for Sticker Generation ---
-        const prompts = [
-            "A beautiful glass jar full of frosty cannabis buds, sticker art, die-cut",
-            "A vibrant, cartoon-style cannabis leaf with a smiling face, sticker art",
-            "A detailed illustration of a single, frosty cannabis bud, sticker style, white background",
-            "A minimalist line art of a bong, sticker design, clean lines",
-            "A cute, kawaii-style joint character with big eyes, sticker art",
-            "A psychedelic, colorful cannabis plant, sticker art, die-cut",
-            "A vintage-style seed packet for 'Cosmic Kush', sticker design illustration",
-            "A happy, stoned alien smoking a joint, cartoon sticker art",
-            "A sticker of a cannabis-infused gummy bear, vibrant colors, die-cut",
-            "'Good Vibes' text with a cannabis leaf, retro 70s style, sticker art",
-            "A majestic lion with a mane made of cannabis leaves, sticker art",
-            "A skull with cannabis leaves growing out of it, sticker design, detailed illustration"
-        ];
+  <script>
+    const prompts = [
+      "A beautiful glass jar full of frosty cannabis buds, sticker art, die-cut",
+      "A vibrant, cartoon-style cannabis leaf with a smiling face, sticker art",
+      "A single frosty cannabis bud, sticker style, white background",
+      "A minimalist line-art bong, clean sticker design",
+      "A cute kawaii joint character with big eyes, sticker art",
+      "Psychedelic colorful cannabis plant, die-cut sticker",
+      "Vintage seed packet for 'Cosmic Kush', sticker illustration",
+      "Happy stoned alien smoking a joint, cartoon sticker",
+      "Cannabis-infused gummy bear sticker, vibrant colors",
+      "'Good Vibes' text with cannabis leaf, retro 70s sticker",
+      "Majestic lion with mane made of cannabis leaves, sticker art",
+      "Skull with cannabis leaves growing out, detailed sticker"
+    ];
 
-        // --- Generate Sticker via Backend API ---
-        async function generateSticker() {
-            try {
-                // 1. Setup: Show loader and select a random prompt
-                stickerImage.classList.add('hidden');
-                loader.classList.remove('hidden');
-                
-                const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
-                promptDisplay.textContent = `"${randomPrompt}"`;
+    async function generate() {
+      const loader = document.getElementById('loader');
+      const sticker = document.getElementById('sticker');
+      const promptEl = document.getElementById('prompt');
 
-                // Use our backend API instead of direct external API call
-                const apiUrl = '/api/generate-sticker';
-                const payload = { prompt: randomPrompt };
-                
-                // 2. API Call with Exponential Backoff and Timeout
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => {
-                    controller.abort();
-                }, 30000); // 30 second total timeout
-                
-                let response;
-                try {
-                    response = await fetchWithRetry(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                } catch (error) {
-                    clearTimeout(timeoutId);
-                    if (error.name === 'AbortError') {
-                        throw new Error('Request timed out. Please try again.');
-                    }
-                    throw error;
-                }
-                
-                // Double-check response exists and is valid
-                if (!response) {
-                    throw new Error('No response received from the API');
-                }
-                
-                if (!response.ok) {
-                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                    try {
-                        const error = await response.json();
-                        errorMessage = error.error || error.details || errorMessage;
-                    } catch (parseError) {
-                        console.warn('Could not parse error response:', parseError);
-                    }
-                    throw new Error(`API Error: ${errorMessage}`);
-                }
-                
-                let result;
-                try {
-                    result = await response.json();
-                } catch (parseError) {
-                    throw new Error('Failed to parse API response as JSON');
-                }
+      sticker.classList.add('hidden');
+      loader.classList.remove('hidden');
 
-                // 3. Process and Display Image
-                if (result && result.success && result.image) {
-                    const base64Data = result.image;
-                    
-                    // Handle different image formats
-                    if (result.isPlaceholder) {
-                        // SVG placeholder
-                        stickerImage.src = `data:image/svg+xml;base64,${base64Data}`;
-                    } else {
-                        // Regular PNG image
-                        stickerImage.src = `data:image/png;base64,${base64Data}`;
-                    }
-                    
-                    // Wait for image to load before swapping
-                    stickerImage.onload = () => {
-                        loader.classList.add('hidden');
-                        stickerImage.classList.remove('hidden');
-                    };
-                    stickerImage.onerror = () => {
-                        throw new Error("Failed to load the generated image.");
-                    };
-                    
-                    // Show method used if it's a placeholder
-                    if (result.method === 'placeholder' && result.note) {
-                        console.log('Note:', result.note);
-                    }
-                } else {
-                    throw new Error(result.error || "No image data received from API.");
-                }
+      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+      promptEl.textContent = `"${prompt}"`;
 
-            } catch (error) {
-                console.error("Error generating sticker:", error);
-                loader.innerHTML = `<p class="text-red-400 text-center">Failed to generate sticker. Please refresh and try again.<br><small class="text-xs">${error.message}</small></p>`;
-            }
-        }
-
-        // --- Fetch with Retry Logic ---
-        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
-            let lastError;
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    // Check if operation was aborted before making request
-                    if (options?.signal?.aborted) {
-                        throw new Error('Request was aborted');
-                    }
-                    
-                    const response = await fetch(url, options);
-                    
-                    // Check if response is valid
-                    if (!response) {
-                        throw new Error('No response received from server');
-                    }
-                    
-                    if (response.status !== 429 && response.status < 500) { // Don't retry on client errors (except 429)
-                        return response;
-                    }
-                    
-                    // For 429 (Too Many Requests) or 5xx server errors, wait and retry
-                    console.log(`Request failed with status ${response.status}, retrying in ${delay / 1000}s...`);
-                    lastError = new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    
-                } catch (error) {
-                    console.log(`Network error (attempt ${i + 1}/${retries}):`, error.message);
-                    lastError = error;
-                    
-                    // Don't retry if it's an abort error or if it's the last attempt
-                    if (error.name === 'AbortError' || i === retries - 1) {
-                        throw error;
-                    }
-                }
-                
-                // Check if operation was aborted before waiting
-                if (options?.signal?.aborted) {
-                    throw new Error('Request was aborted');
-                }
-                
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2; // Exponential backoff
-            }
-            
-            throw lastError || new Error('All retry attempts failed');
-        }
-
-        // --- Global Error Handling ---
-        window.addEventListener('unhandledrejection', function(event) {
-            console.error('Unhandled promise rejection:', event.reason);
-            // Prevent the default behavior of logging to console
-            event.preventDefault();
-            
-            // Show user-friendly error
-            const loader = document.getElementById('loader');
-            if (loader && !loader.classList.contains('hidden')) {
-                loader.innerHTML = `<p class="text-red-400 text-center">An unexpected error occurred. Please refresh the page and try again.<br><small class="text-xs">Error: ${event.reason?.message || 'Unknown error'}</small></p>`;
-            }
+      try {
+        const res = await fetch('/api/generate-sticker', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
         });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Unknown');
 
-        // --- Initial Load ---
-        document.addEventListener('DOMContentLoaded', generateSticker);
-    </script>
+        sticker.src = `data:image/png;base64,${data.image}`;
+        sticker.onload = () => { loader.classList.add('hidden'); sticker.classList.remove('hidden'); };
+        sticker.onerror = () => { throw new Error('Image failed to load'); };
+      } catch (e) {
+        loader.innerHTML = `<p class="text-red-400 text-sm">Failed: ${e.message}<br><small class="text-xs">Refresh to retry</small></p>`;
+      }
+    }
+
+    generate();
+  </script>
 </body>
 </html>
