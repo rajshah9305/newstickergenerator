@@ -1,4 +1,4 @@
-// api/generate-sticker.js  →  4K UHD via Pollinations
+// api/generate-sticker.js  (ES-module, Node 18)
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
@@ -16,19 +16,19 @@ export default async function handler(req, res) {
 
     const cleanPrompt = prompt.trim();
 
-    /* 4K UHD request */
+    /* Pollinations – default quality, any aspect ratio */
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}` +
-                '?model=flux-4k&width=3840&height=2160&nologo=true&private=true&enhance=true';
+                '?nologo=true&private=true&width=1024&height=1024';
 
     const fetchRes = await fetch(url);
-    if (!fetchRes.ok) throw new Error('Pollinations 4K error ' + fetchRes.status);
+    if (!fetchRes.ok) throw new Error('Pollinations error ' + fetchRes.status);
 
     const buffer = await fetchRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString('base64');
 
-    return res.status(200).json({ success: true, image: base64, method: 'Pollinations-4K' });
+    return res.status(200).json({ success: true, image: base64, method: 'Pollinations' });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: '4K generation failed', details: err.message });
+    return res.status(500).json({ error: 'Generation failed', details: err.message });
   }
 }
