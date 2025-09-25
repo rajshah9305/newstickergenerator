@@ -1,286 +1,137 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weed Sticker Generator – Pink Kush Smoke</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <title>Pink-Kush Sticker Generator</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>">
   <style>
-    /* ----  BASE STYLES  ---- */
-    html, body {
-      height: 100%;
-      overflow: hidden; /* Prevent any scrollbars */
+    :root{
+      --btn-from:#ec4899;--btn-to:#be185d;
+      --text:#111;--subtle:#555;--bg:#fff;
     }
-    body {
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      background: #f0f0f0;
-      color: #111827;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-
-    /* ----  PINK-KUSH SMOKE EFFECT  ---- */
-    #smoke {
-      position: fixed;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      background: #fff;
-      overflow: hidden;
-      transition: opacity 0.8s ease-in-out;
-    }
-    #smoke canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* ----  LOADER ANIMATION  ---- */
-    .loader {
-      border: 4px solid rgba(0, 0, 0, 0.1);
-      border-left-color: #ec4899;
-      border-radius: 50%;
-      width: 56px;
-      height: 56px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-    
-    /* ---- STICKER STYLING ---- */
-    /* EDIT: Added styles directly to the sticker for a "floating" effect */
-    #sticker {
-      /* Shadow to lift the sticker off the background */
-      filter: drop-shadow(0 25px 25px rgba(0,0,0,0.3));
-      transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-    }
-    #sticker.hidden {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-
-    /* ----  BUTTON STYLING  ---- */
-    .generate-btn {
-      background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
-      color: #fff;
-      padding: 0.875rem 2.5rem;
-      border-radius: 9999px;
-      font-weight: 600;
-      font-size: 1rem;
-      box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.3);
-      transition: all 0.3s ease;
-      border: none;
-      cursor: pointer;
-    }
-    .generate-btn:hover:not(:disabled) {
-      transform: translateY(-3px);
-      box-shadow: 0 15px 35px -5px rgba(236, 72, 153, 0.4);
-    }
-    .generate-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    *{box-sizing:border-box;margin:0;font-family:Inter,system-ui,sans-serif}
+    html,body{height:100%;background:var(--bg);color:var(--text)}
+    #smoke{position:fixed;inset:0;z-index:0}
+    main{z-index:10;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:1rem;text-align:center}
+    h1{font-size:clamp(2.5rem,8vw,5rem);font-weight:800;letter-spacing:-.04em}
+    p.sub{margin:.25rem 0 2rem;color:var(--subtle)}
+    #card{width:clamp(300px,90vw,420px);aspect-ratio:1/1;background:#fff;border-radius:24px;box-shadow:0 25px 50px -12px rgba(0,0,0,.15);display:grid;place-content:center;position:relative}
+    .loader{width:56px;height:56px;border:4px solid #0001;border-left-color:var(--btn-from);border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #sticker{max-width:85%;max-height:85%;border-radius:16px;transition:opacity .4s,transform .4s}
+    #sticker.hidden{opacity:0;transform:scale(.95)}
+    .generate-btn{margin-top:2rem;padding:.875rem 2.5rem;border:none;border-radius:999px;background:linear-gradient(135deg,var(--btn-from) 0%,var(--btn-to) 100%);color:#fff;font-weight:600;box-shadow:0 10px 25px -5px rgba(236,72,153,.35);cursor:pointer;transition:all .3s}
+    .generate-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 15px 35px -5px rgba(236,72,153,.45)}
+    .generate-btn:disabled{opacity:.5;cursor:not-allowed}
+    footer{font-size:.7rem;color:var(--subtle);margin-top:auto;padding-bottom:1rem}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
 </head>
-
-<body class="bg-gray-50">
+<body>
   <div id="smoke"></div>
+  <main>
+    <h1>Pink-Kush Stickers</h1>
+    <p class="sub">Never the same sticker twice</p>
 
-  <div class="relative z-10 flex flex-col h-full">
-    <header class="w-full text-center pt-12 md:pt-16 px-4">
-      <h1 class="text-[clamp(2.5rem,10vw,5rem)] font-extrabold bg-gradient-to-r from-pink-600 to-purple-700 bg-clip-text text-transparent leading-tight">
-        Weed Sticker Generator
-      </h1>
-      <p class="text-gray-500 text-base md:text-lg mt-2">Never the same sticker twice</p>
-    </header>
+    <div id="card">
+      <div id="loader"><div class="loader"></div></div>
+      <img id="sticker" alt="Generated sticker">
+    </div>
 
-    <!-- EDIT: Main area now centers content vertically and horizontally without a card -->
-    <main class="flex-grow flex flex-col justify-center items-center p-4">
-      <!-- This container ensures stable layout during loading -->
-      <div class="flex-grow flex justify-center items-center flex-col">
-        <div id="loader" class="flex flex-col items-center gap-4 text-center p-8 rounded-2xl bg-black bg-opacity-10 backdrop-blur-sm">
-          <div class="loader"></div>
-          <p class="text-base text-white font-medium">Crafting your sticker…</p>
-          <p id="prompt" class="text-sm text-gray-200 italic max-w-[280px]"></p>
-        </div>
-        <!-- Sticker is now "free" on the page -->
-        <img id="sticker" class="hidden max-w-[80vw] h-auto max-h-[55vh] object-contain" alt="AI Generated Weed Sticker">
-      </div>
-      <button id="newBtn" onclick="generate()" class="generate-btn mt-8 flex-shrink-0">New Sticker</button>
-    </main>
+    <button id="newBtn" class="generate-btn">New Sticker</button>
 
-    <footer class="w-full text-center text-xs text-gray-500 py-4 px-4">
-      Images are AI-generated for demonstration · Developed with ❤️
-    </footer>
-  </div>
+    <footer>AI-generated for demonstration · <a href="https://github.com/yourname/pink-kush-stickers" target="_blank" rel="noopener">GitHub</a></footer>
+  </main>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script>
-    /* ----------  SMOKE SHADER (Unchanged) ---------- */
-    let scene, camera, renderer, material, uniforms, smokeEl;
-
-    const vertexShader = `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
-    const fragmentShader = `
-      varying vec2 vUv;
-      uniform float u_time;
-      uniform vec2 u_resolution;
-      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
-      vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
-      float snoise(vec2 v) {
-        const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
-        vec2 i = floor(v + dot(v, C.yy)); vec2 x0 = v - i + dot(i, C.xx);
-        vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-        vec4 x12 = x0.xyxy + C.xxzz; x12.xy -= i1;
-        i = mod289(i); vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
-        vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-        m = m*m; m = m*m;
-        vec3 x = 2.0 * fract(p * C.www) - 1.0; vec3 h = abs(x) - 0.5; vec3 ox = floor(x + 0.5); vec3 a0 = x - ox;
-        m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
-        vec3 g; g.x = a0.x * x0.x + h.x * x0.y; g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-        return 130.0 * dot(m, g);
+  <script type="module">
+    /* ---- off-screen canvas smoke ---- */
+    const smokeCanvas=document.createElement('canvas');smokeCanvas.style.cssText='width:100%;height:100%';document.getElementById('smoke').appendChild(smokeCanvas);
+    const gl=smokeCanvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true});
+    if(!gl){document.getElementById('smoke').remove();}else{
+      const vert=`#version 300 es
+      in vec2 a;out vec2 uv;void main(){uv=a*.5+.5;gl_Position=vec4(a,0,1);}`;
+      const frag=`#version 300 es
+      precision highp float;in vec2 uv;uniform float t;out vec4 c;
+      vec3 h(vec3 x){return x-floor(x*1.0/289.0)*289.0;}
+      vec2 h(vec2 x){return x-floor(x*1.0/289.0)*289.0;}
+      vec3 p(vec3 x){return h(((x*34.0)+1.0)*x);}
+      float n(vec2 v){
+        const vec4 C=vec4(.211324865405187,.366025403784439,-.577350269189626,.024390243902439);
+        vec2 i=floor(v+dot(v,C.yy)),x0=v-i+dot(i,C.xx);
+        vec2 i1=(x0.x>x0.y)?vec2(1,0):vec2(0,1);
+        vec4 x12=x0.xyxy+C.xxzz;x12.xy-=i1;
+        i=h(i);vec3 q=p(p(i.y+vec3(0,i1.y,1))+i.x+vec3(0,i1.x,1));
+        vec3 m=max(.5-vec3(dot(x0,x0),dot(x12.xy,x12.xy),dot(x12.zw,x12.zw)),0.);
+        m=m*m;m=m*m;
+        vec3 x=2.0*fract(q*C.www)-1.0,h=abs(x)-.5,ox=floor(x+.5),a0=x-ox;
+        m*=1.79284291400159-.85373472095314*(a0*a0+h*h);
+        vec3 g;g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;
+        return 130.0*dot(m,g);
       }
-      float fbm(vec2 st) {
-        float value = 0.0; float amplitude = 0.5;
-        for (int i = 0; i < 6; i++) { value += amplitude * snoise(st); st *= 2.0; amplitude *= 0.5; }
-        return value;
+      float f(vec2 st){float v=0.,a=.5;for(int i=0;i<6;i++){v+=a*n(st);st*=2.0;a*=.5;}return v;}
+      void main(){
+        vec2 u=uv,y=u;y.y-=(t*.08);
+        float s=f(y*2.0+t)*.15,t2=f(y*4.0-t*.5)*.1;
+        y.x+=s;y.y+=t2;
+        float w=f(y*3.0+t*2.0)*.08;y+=w;
+        float r=(f(y*1.5)+f(y*3.0+t)+f(y*6.0-t*.8))/3.;
+        vec3 k=mix(vec3(.96,.51,.75),vec3(.88,.27,.53),smoothstep(-.5,.5,r));
+        k=mix(k,vec3(.98,.71,.82),smoothstep(0.,1.,f(y*3.0+t)));
+        k=mix(k,vec3(.7,.1,.3),smoothstep(-1.,0.,f(y*1.5)));
+        k*=.25+.7*(r+1.)*.5;
+        float a=(r+1.)*.5*smoothstep(0.,.4,u.y)*smoothstep(1.,.6,u.y)*smoothstep(0.,.2,u.x)*smoothstep(1.,.8,u.x);
+        c=vec4(k,clamp(a,0.,.9));
+      }`;
+      const prog=gl.createProgram();const vs=gl.createShader(gl.VERTEX_SHADER),fs=gl.createShader(gl.FRAGMENT_SHADER);
+      [vs,fs].forEach((sh,i)=>{gl.shaderSource(sh,i?frag:vert);gl.compileShader(sh);gl.attachShader(prog,sh);});
+      gl.linkProgram(prog);gl.useProgram(prog);
+      const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+      const loc=gl.getAttribLocation(prog,'a');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+      const tLoc=gl.getUniformLocation(prog,'t');
+      let start=performance.now();
+      function draw(){
+        gl.viewport(0,0,gl.canvas.width=innerWidth,gl.canvas.height=innerHeight);
+        gl.uniform1f(t,(performance.now()-start)*.001);
+        gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+        requestAnimationFrame(draw);
       }
-      void main() {
-        vec2 uv = vUv; float time = u_time * 0.09;
-        vec2 smokeUv = uv; smokeUv.y -= time * 0.4;
-        float turbulence1 = fbm(smokeUv * 2.0 + time); float turbulence2 = fbm(smokeUv * 4.0 - time * 0.5);
-        smokeUv.x += turbulence1 * 0.15; smokeUv.y += turbulence2 * 0.1;
-        float swirl = fbm(smokeUv * 3.0 + time * 2.0); smokeUv += swirl * 0.08;
-        float noise1 = fbm(smokeUv * 1.5); float noise2 = fbm(smokeUv * 3.0 + time); float noise3 = fbm(smokeUv * 6.0 - time * 0.8);
-        float finalNoise = (noise1 * 0.5 + noise2 * 0.3 + noise3 * 0.2);
-        vec3 color1 = vec3(0.85, 0.10, 0.50); vec3 color2 = vec3(0.65, 0.05, 0.45);
-        vec3 color3 = vec3(0.75, 0.15, 0.60); vec3 color4 = vec3(0.40, 0.02, 0.30);
-        vec3 finalColor = mix(color1, color2, smoothstep(-0.5, 0.5, finalNoise));
-        finalColor = mix(finalColor, color3, smoothstep(0.0, 1.0, noise2));
-        finalColor = mix(finalColor, color4, smoothstep(-1.0, 0.0, noise1));
-        float brightness = 0.25 + 0.7 * (finalNoise + 1.0) * 0.5; finalColor *= brightness;
-        float fadeY = smoothstep(0.0, 0.4, uv.y) * smoothstep(1.0, 0.6, uv.y);
-        float fadeX = smoothstep(0.0, 0.2, uv.x) * smoothstep(1.0, 0.8, uv.x);
-        float alpha = (finalNoise + 1.0) * 0.5; alpha *= fadeY * fadeX; alpha = clamp(alpha, 0.0, 0.95);
-        gl_FragColor = vec4(finalColor, alpha);
-      }
-    `;
-
-    function initSmoke() {
-      smokeEl = document.getElementById('smoke');
-      scene = new THREE.Scene();
-      camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
-      camera.position.z = 1;
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setClearColor(0xffffff, 1);
-      smokeEl.appendChild(renderer.domElement);
-      const geometry = new THREE.PlaneGeometry(2, 2);
-      uniforms = { u_time: { value: 0.0 }, u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) } };
-      material = new THREE.ShaderMaterial({ uniforms, vertexShader, fragmentShader, transparent: true, blending: THREE.NormalBlending });
-      const mesh = new THREE.Mesh(geometry, material);
-      scene.add(mesh);
-      window.addEventListener('resize', onResize, false);
-      onResize();
+      draw();
+      addEventListener('resize',()=>gl.viewport(0,0,gl.canvas.width=innerWidth,gl.canvas.height=innerHeight));
     }
 
-    function onResize() {
-      const w = window.innerWidth; const h = window.innerHeight;
-      renderer.setSize(w, h);
-      uniforms.u_resolution.value.set(w, h);
-    }
-
-    function animateSmoke() {
-      requestAnimationFrame(animateSmoke);
-      uniforms.u_time.value += 0.09;
-      renderer.render(scene, camera);
-    }
-
-    initSmoke();
-    animateSmoke();
-
-    /* ----------  STICKER GENERATION LOGIC  ---------- */
-    const basePrompts = [
-      "A friendly cartoon cannabis leaf wearing sunglasses, vibrant sticker art",
-      "A glass mason jar filled with frosty purple cannabis buds, premium dispensary sticker",
-      "A minimalist line-art bong with sacred geometry patterns, clean modern sticker",
-      "A vintage seed packet labeled 'Purple Haze Premium', retro sticker illustration",
-      "A majestic lion with a flowing mane made of cannabis leaves, regal sticker art",
-      "A pattern of cannabis-infused gummy bears in rainbow colors, modern edibles sticker",
-      "A single perfect cannabis bud with morning dew drops, macro photography sticker",
-      "'Inhale the Good Vibes' typography with cannabis leaf accents, motivational sticker"
+    /* ---- sticker engine ---- */
+    const prompts=[
+      'glass jar full of frosty pink cannabis buds, sticker art, die-cut',
+      'cartoon cannabis leaf with heart sunglasses, pastel sticker',
+      'minimal line-art bong, sacred geometry, white background sticker',
+      'kawaii joint character holding a heart, sticker',
+      'retro 70s seed packet “Cosmic Kush”, vintage sticker',
+      'psychedelic lion with cannabis-leaf mane, vibrant sticker'
     ];
-    let lastPrompt = '';
-
-    function getUniquePrompt() {
-      let p;
-      do { p = basePrompts[Math.floor(Math.random() * basePrompts.length)]; }
-      while (p === lastPrompt && basePrompts.length > 1);
-      lastPrompt = p;
-      return p;
+    let last='';
+    const rand=()=>{let p;do{p=prompts[Math.floor(Math.random()*prompts.length)]}while(p===last&&prompts.length>1);last=p;return p};
+    const $=s=>document.querySelector(s);
+    async function generate(){
+      $('#loader').style.display='flex';
+      $('#sticker').classList.add('hidden');
+      $('#newBtn').disabled=true;
+      const p=rand();
+      try{
+        const r=await fetch('/api/generate-sticker',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:`${p}, high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration`})});
+        const j=await r.json();
+        if(!j.success) throw new Error(j.error||'gen failed');
+        $('#sticker').src='data:image/jpeg;base64,'+j.image;
+        $('#sticker').onload=()=>{$('#loader').style.display='none';$('#sticker').classList.remove('hidden');$('#newBtn').disabled=false};
+      }catch(e){console.error(e);$('#loader').innerHTML=`<p style=color:#e11>Failed. <button onclick="generate()">Retry</button></p>`;$('#newBtn').disabled=false}
     }
-    
-    // Using a mock API call to ensure the app is runnable for demonstration.
-    function mockApiCall(prompt) {
-      return new Promise((resolve) => {
-        console.log("Generating with prompt:", prompt);
-        setTimeout(() => {
-            const placeholderUrl = `https://placehold.co/512x512/86198f/ffffff?text=Sticker!&font=inter`;
-            resolve({ success: true, image: placeholderUrl });
-        }, 1500 + Math.random() * 1000);
-      });
-    }
-
-    async function generate() {
-      const loader = document.getElementById('loader');
-      const stickerImg = document.getElementById('sticker');
-      const promptEl = document.getElementById('prompt');
-      const btn = document.getElementById('newBtn');
-
-      stickerImg.classList.add('hidden');
-      stickerImg.src = '';
-      loader.classList.remove('hidden');
-      btn.disabled = true;
-      smokeEl.style.opacity = 1;
-
-      const promptText = getUniquePrompt();
-      promptEl.textContent = `"${promptText}"`;
-
-      try {
-        const data = await mockApiCall(promptText);
-        
-        if (!data.success) throw new Error(data.error || 'Generation failed');
-
-        stickerImg.src = data.image;
-        stickerImg.onload = () => {
-          loader.classList.add('hidden');
-          stickerImg.classList.remove('hidden');
-          btn.disabled = false;
-          smokeEl.style.opacity = '0.35';
-        };
-        stickerImg.onerror = () => { throw new Error('Image load fail'); };
-      } catch (e) {
-        console.error(e);
-        loader.innerHTML = `
-          <div class="text-center">
-            <p class="text-red-400 text-sm font-semibold">Generation Failed</p>
-            <p class="text-xs text-gray-200">${e.message}</p>
-            <p class="text-xs text-gray-300 mt-2">Click "New Sticker" to try again.</p>
-          </div>
-        `;
-        btn.disabled = false;
-      }
-    }
-
-    window.onload = generate;
+    $('#newBtn').addEventListener('click',generate);
+    generate();
   </script>
+  <!-- analytics -->
+  <script defer data-domain="pink-kush-stickers.vercel.app" src="https://plausible.io/js/script.js"></script>
 </body>
 </html>
