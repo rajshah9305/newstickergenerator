@@ -1,18 +1,9 @@
 {
   "name": "weed-sticker-generator",
   "version": "1.0.0",
-  "description": "AI-powered weed sticker generator using Google Gemini API",
+  "description": "AI-powered weed sticker generator using Pollinations",
   "type": "module",
-  "main": "index.html",
-  "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'No build step required'",
-    "start": "vercel dev"
-  },
-  "keywords": ["ai", "sticker", "generator", "cannabis", "weed"],
-  "author": "rajshah9305",
+  "scripts": { "dev": "vercel dev" },
   "license": "MIT",
-  "engines": {
-    "node": ">=18.0.0"
-  }
+  "engines": { "node": ">=18" }
 }
