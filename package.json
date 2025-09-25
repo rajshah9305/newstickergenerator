@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "AI-powered weed sticker generator (white theme)",
   "type": "module",
-  "scripts": { "dev": "vercel dev" },
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "vercel dev"
+  },
   "license": "MIT",
   "engines": { "node": ">=18" }
 }
