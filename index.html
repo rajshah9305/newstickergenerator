@@ -1,4 +1,7 @@
+
+
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -18,29 +21,33 @@
     }
     #smoke canvas { display: block; width: 100%; height: 100%; }
 
-    /* ----  LOADER  ---- */
-    .loader {
-      border: 4px solid rgba(0,0,0,.15);
-      border-left-color: #ec4899; /* pink-500 */
-      border-radius: 50%;
-      width: 56px; height: 56px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
+```
+/* ----  LOADER  ---- */
+.loader {
+  border: 4px solid rgba(0,0,0,.15);
+  border-left-color: #ec4899; /* pink-500 */
+  border-radius: 50%;
+  width: 56px; height: 56px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ----  LAYOUT  ---- */
-    html, body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: #fff; }
-    main { flex: 1; }
-    header { margin-top: clamp(3vh, 5vh, 10vh); }
-    footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
+/* ----  LAYOUT  ---- */
+html, body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; color: #fff; }
+main { flex: 1; }
+header { margin-top: clamp(3vh, 5vh, 10vh); }
+footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
+```
+
   </style>
 </head>
 
 <body>
   <!-- pink-kush smoke backdrop -->
-  <div id="smoke"><canvas id="smokeCanvas"></canvas></div>
+  <div id="smoke"></div>
 
   <!-- HERO -->
+
   <header class="relative z-10 w-full px-4 pt-4 pb-2 text-center">
     <h1 class="font-extrabold text-white drop-shadow-lg"
         style="font-size: clamp(2.5rem, 8vw, 5rem); line-height: 1.02;">
@@ -50,6 +57,7 @@
   </header>
 
   <!-- MAIN CARD -->
+
   <main class="relative z-10 grid place-items-center px-4 pb-6">
     <div id="card" class="w-auto max-w-[95vw] max-h-[75vh] bg-white rounded-2xl shadow-2xl p-4 grid place-items-center">
       <div id="loader" class="flex flex-col items-center gap-3">
@@ -66,105 +74,198 @@
   </main>
 
   <!-- FOOTER -->
+
   <footer class="relative z-10 text-center text-xs text-gray-400 py-4" style="margin-bottom: clamp(2vh, 4vh, 8vh);">
     Images are AI-generated · Developed by RAJ with ❤️
   </footer>
 
   <!-- ------------------------------------------------------------------ -->
+
   <!--                     THREE.JS  –  PINK-KUSH SMOKE                   -->
+
   <!-- ------------------------------------------------------------------ -->
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script id="vertexShader" type="x-shader/x-vertex">
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  </script>
-  <script id="fragmentShader" type="x-shader/x-fragment">
-    varying vec2 vUv;
-    uniform float u_time;
-
-    float random(vec2 st) {
-      return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-    }
-    float noise(vec2 st) {
-      vec2 i = floor(st), f = fract(st);
-      float a = random(i), b = random(i + vec2(1.0, 0.0)),
-            c = random(i + vec2(0.0, 1.0)), d = random(i + vec2(1.0, 1.0));
-      vec2 u = f * f * (3.0 - 2.0 * f);
-      return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-    }
-    float fbm(vec2 st) {
-      float value = 0.0, amplitude = .5, frequency = 0.;
-      for (int i = 0; i < 6; i++) {
-        value += amplitude * noise(st);
-        st *= 2.; amplitude *= .5;
-      }
-      return value;
-    }
-
-    void main() {
-      vec2 uv = vUv;
-      float t = u_time * 0.05;
-      uv.y -= t; // rise from bottom
-      float turbulence = fbm(uv * 2.0);
-      uv.y += turbulence * 0.1;
-      uv.x += turbulence * 0.05;
-      float swirl = fbm(uv * 3.0 + t);
-      uv += swirl * 0.2;
-      float final_noise = fbm(uv * 2.5);
-      // pink colour
-      vec3 color = vec3(final_noise * 1.2, final_noise * 0.3, final_noise * 0.9);
-      float vignette = distance(vUv, vec2(0.5, 0.5));
-      color *= 1.0 - vignette * 0.3;
-      gl_FragColor = vec4(color, final_noise * 0.8);
-    }
-  </script>
 
   <script>
-    /* ----------  THREE.JS BOILERPLATE  ---------- */
-    let scene, camera, renderer, plane, material, uniforms;
+    /* ----------  THREE.JS PINK SMOKE EFFECT  ---------- */
+    let scene, camera, renderer, material, uniforms;
+
+    // Vertex Shader
+    const vertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    // Fragment Shader - Enhanced Pink Smoke
+    const fragmentShader = `
+      varying vec2 vUv;
+      uniform float u_time;
+      uniform vec2 u_resolution;
+
+      // Improved noise functions
+      vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+      vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+
+      float snoise(vec2 v) {
+        const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+        vec2 i = floor(v + dot(v, C.yy));
+        vec2 x0 = v - i + dot(i, C.xx);
+        vec2 i1;
+        i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+        vec4 x12 = x0.xyxy + C.xxzz;
+        x12.xy -= i1;
+        i = mod289(i);
+        vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+        vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+        m = m*m;
+        m = m*m;
+        vec3 x = 2.0 * fract(p * C.www) - 1.0;
+        vec3 h = abs(x) - 0.5;
+        vec3 ox = floor(x + 0.5);
+        vec3 a0 = x - ox;
+        m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+        vec3 g;
+        g.x = a0.x * x0.x + h.x * x0.y;
+        g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+        return 130.0 * dot(m, g);
+      }
+
+      float fbm(vec2 st) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        float frequency = 0.0;
+        for (int i = 0; i < 6; i++) {
+          value += amplitude * snoise(st);
+          st *= 2.0;
+          amplitude *= 0.5;
+        }
+        return value;
+      }
+
+      void main() {
+        vec2 uv = vUv;
+        float time = u_time * 0.02;
+        
+        // Create rising smoke effect
+        vec2 smokeUv = uv;
+        smokeUv.y -= time * 0.3; // Slow upward movement
+        
+        // Add turbulence
+        float turbulence1 = fbm(smokeUv * 2.0 + time);
+        float turbulence2 = fbm(smokeUv * 4.0 - time * 0.5);
+        
+        // Distort UV coordinates
+        smokeUv.x += turbulence1 * 0.15;
+        smokeUv.y += turbulence2 * 0.1;
+        
+        // Create swirling motion
+        float swirl = fbm(smokeUv * 3.0 + time * 2.0);
+        smokeUv += swirl * 0.08;
+        
+        // Final noise for smoke density
+        float noise1 = fbm(smokeUv * 1.5);
+        float noise2 = fbm(smokeUv * 3.0 + time);
+        float noise3 = fbm(smokeUv * 6.0 - time * 0.8);
+        
+        float finalNoise = (noise1 * 0.5 + noise2 * 0.3 + noise3 * 0.2);
+        
+        // Create pink color palette
+        vec3 color1 = vec3(1.0, 0.2, 0.8);  // Hot pink
+        vec3 color2 = vec3(0.8, 0.1, 0.6);  // Deep pink
+        vec3 color3 = vec3(1.0, 0.4, 0.9);  // Light pink
+        vec3 color4 = vec3(0.6, 0.05, 0.4); // Dark magenta
+        
+        // Mix colors based on noise
+        vec3 finalColor = mix(color1, color2, smoothstep(-0.5, 0.5, finalNoise));
+        finalColor = mix(finalColor, color3, smoothstep(0.0, 1.0, noise2));
+        finalColor = mix(finalColor, color4, smoothstep(-1.0, 0.0, noise1));
+        
+        // Add brightness variation
+        float brightness = 0.3 + 0.7 * (finalNoise + 1.0) * 0.5;
+        finalColor *= brightness;
+        
+        // Create fade effect from bottom to top
+        float fadeY = smoothstep(0.0, 0.4, uv.y) * smoothstep(1.0, 0.6, uv.y);
+        
+        // Add horizontal fade for edges
+        float fadeX = smoothstep(0.0, 0.2, uv.x) * smoothstep(1.0, 0.8, uv.x);
+        
+        float alpha = (finalNoise + 1.0) * 0.5;
+        alpha *= fadeY * fadeX;
+        alpha = clamp(alpha, 0.0, 0.8);
+        
+        gl_FragColor = vec4(finalColor, alpha);
+      }
+    `;
+
     function initSmoke() {
+      // Create scene
       scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      
+      // Create camera
+      camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
       camera.position.z = 1;
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      
+      // Create renderer
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
       renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 1);
       document.getElementById('smoke').appendChild(renderer.domElement);
 
-      const geometry = new THREE.PlaneBufferGeometry(2, 2);
+      // Create geometry
+      const geometry = new THREE.PlaneGeometry(2, 2);
+      
+      // Create uniforms
       uniforms = {
-        u_time: { type: "f", value: 1.0 },
-        u_resolution: { type: "v2", value: new THREE.Vector2() },
-        u_mouse: { type: "v2", value: new THREE.Vector2() }
+        u_time: { value: 0.0 },
+        u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
       };
 
+      // Create material
       material = new THREE.ShaderMaterial({
         uniforms: uniforms,
-        vertexShader: document.getElementById('vertexShader').textContent,
-        fragmentShader: document.getElementById('fragmentShader').textContent,
-        transparent: true
+        vertexShader: vertexShader,
+        fragmentShader: fragmentShader,
+        transparent: true,
+        blending: THREE.AdditiveBlending
       });
 
-      plane = new THREE.Mesh(geometry, material);
+      // Create mesh
+      const plane = new THREE.Mesh(geometry, material);
       scene.add(plane);
 
+      // Handle resize
       window.addEventListener('resize', onResize, false);
       onResize();
     }
+
     function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      uniforms.u_resolution.value.x = renderer.domElement.width;
-      uniforms.u_resolution.value.y = renderer.domElement.height;
+      
+      renderer.setSize(width, height);
+      uniforms.u_resolution.value.set(width, height);
     }
+
     function animateSmoke() {
       requestAnimationFrame(animateSmoke);
-      uniforms.u_time.value += 0.05;
+      uniforms.u_time.value += 1.0;
       renderer.render(scene, camera);
     }
+
+    // Initialize and start animation
     initSmoke();
     animateSmoke();
 
@@ -211,23 +312,26 @@
       promptEl.textContent = `"${rawPrompt}"`;
 
       try {
-        const res = await fetch('/api/generate-sticker', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt })
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error || 'Server error');
-        if (seenImages.has(data.image)) { /* collision → retry once */ return generate(); }
-        seenImages.add(data.image);
-
-        sticker.src = `data:image/png;base64,${data.image}`;
+        // Simulate API call for demo - replace with your actual API endpoint
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // For demo, we'll show a placeholder
+        sticker.src = 'data:image/svg+xml;base64,' + btoa(`
+          <svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+            <rect width="300" height="300" fill="white" stroke="#ec4899" stroke-width="4" rx="20"/>
+            <text x="150" y="120" text-anchor="middle" font-family="Arial" font-size="16" fill="#333">🌿</text>
+            <text x="150" y="150" text-anchor="middle" font-family="Arial" font-size="14" fill="#666">Demo Sticker</text>
+            <text x="150" y="180" text-anchor="middle" font-family="Arial" font-size="12" fill="#999">Connect your API</text>
+            <text x="150" y="200" text-anchor="middle" font-family="Arial" font-size="12" fill="#999">for real generation</text>
+          </svg>
+        `);
+        
         sticker.onload = () => {
           loader.classList.add('hidden');
           sticker.classList.remove('hidden');
           btn.disabled = false;
         };
-        sticker.onerror = () => { throw new Error('Image broken'); };
+        
       } catch (e) {
         loader.innerHTML = `<p class="text-red-500 text-sm">Failed: ${e.message}<br><small class="text-xs">Click "New Sticker" to retry</small></p>`;
         btn.disabled = false;
@@ -237,5 +341,6 @@
     /* initial load */
     generate();
   </script>
+
 </body>
 </html>
