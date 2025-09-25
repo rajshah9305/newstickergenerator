@@ -1,7 +1,7 @@
 {
   "name": "weed-sticker-generator",
   "version": "1.0.0",
-  "description": "AI-powered weed sticker generator using Pollinations",
+  "description": "AI-powered weed sticker generator (white theme)",
   "type": "module",
   "scripts": { "dev": "vercel dev" },
   "license": "MIT",
