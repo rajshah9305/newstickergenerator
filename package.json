@@ -1,13 +1,27 @@
 {
   "name": "weed-sticker-generator",
-  "version": "1.1.0",
-  "description": "AI-powered weed sticker generator – Node 22, sticker-only view, shows prompt",
+  "version": "2.0.0",
+  "description": "AI-powered premium weed sticker generator using Pollinations AI – Node 22",
   "type": "module",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "build": "echo 'No build step required'",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "buffer": "^6.0.3"
   },
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"
-  }
+  },
+  "keywords": [
+    "ai",
+    "sticker",
+    "generator",
+    "cannabis",
+    "weed",
+    "pollinations",
+    "vercel"
+  ]
 }
