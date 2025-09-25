@@ -13,6 +13,7 @@
       display:flex;flex-direction:column;
       background:#fff;color:#000;font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
       -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+      min-height:100vh;
     }
     #smoke{
       position:fixed;inset:0;z-index:0;
@@ -32,6 +33,7 @@
       position:relative;z-index:10;
       flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
       padding:1rem;
+      margin-bottom:2rem;
     }
     #sticker{
       max-width:80vw;max-height:55vh;height:auto;object-fit:contain;
@@ -54,9 +56,26 @@
       color:#fff;padding:.875rem 2.5rem;border-radius:9999px;font-weight:600;
       box-shadow:0 10px 25px -5px rgba(236,72,153,.3);
       transition:all .3s ease;border:none;cursor:pointer;
+      margin-bottom:3rem;
     }
     .generate-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 15px 35px -5px rgba(236,72,153,.4)}
     .generate-btn:disabled{opacity:.5;cursor:not-allowed}
+    
+    /* Button container for better positioning */
+    .button-container{
+      position:relative;z-index:10;
+      display:flex;justify-content:center;
+      padding:0 1rem;
+    }
+    
+    /* Footer pushed to bottom */
+    .page-footer{
+      position:relative;z-index:10;
+      margin-top:auto;
+      padding:1rem;
+      text-align:center;
+    }
+    
     .toast{
       position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);
       background:#000;color:#fff;padding:.75rem 1.25rem;border-radius:9999px;font-size:.875rem;
@@ -76,14 +95,17 @@
   <main id="stickerWrap">
     <div id="loader" class="loader-container">
       <div class="loader"></div>
-      <p class="text-base text-black font-medium">Crafting your sticker…</p>
+      <p class="text-base text-black font-medium">Crafting your premium sticker…</p>
     </div>
     <img id="sticker" class="hidden" alt="AI-generated weed sticker">
     <p id="promptUnder" class="hidden"></p>
   </main>
 
-  <footer class="relative z-10 w-full flex flex-col items-center pb-10 gap-2">
+  <div class="button-container">
     <button id="newBtn" class="generate-btn" aria-label="Generate new sticker">New Sticker</button>
+  </div>
+
+  <footer class="page-footer">
     <p class="text-xs text-black opacity-60">Images are AI generated • Developed by RAJ with ❤️</p>
   </footer>
 
@@ -154,26 +176,39 @@
     }
     initSmoke();animate();
 
-    /* ---------- Sticker + Prompt ---------- */
-    const basePrompts=[
-      "A friendly cartoon cannabis leaf wearing sunglasses, vibrant sticker art",
-      "A glass mason jar filled with frosty pink cannabis buds, premium dispensary sticker",
-      "A minimalist line-art bong with sacred geometry patterns, clean modern sticker",
-      "A vintage seed packet labeled 'Pink Haze Premium', retro sticker illustration",
-      "A majestic lion with a flowing mane made of cannabis leaves, regal sticker art",
-      "A pattern of cannabis-infused gummy bears in rainbow colors, modern edibles sticker",
-      "A single perfect cannabis bud with morning dew drops, macro photography sticker",
-      "'Inhale the Good Vibes' typography with cannabis leaf accents, motivational sticker",
-      "A chill sloth hanging from a vibrant cannabis branch, blissful expression, cartoon sticker art",
-      "A mystical crystal bong radiating a cosmic nebula of pink and purple smoke, fantasy sticker illustration",
-      "A 70s-style lava lamp with glowing green cannabis leaves floating inside, psychedelic retro sticker",
-      "A kawaii-style smiling cannabis-infused chocolate bar taking a bite of itself, cute Japanese art sticker",
-      "An astronaut's helmet reflecting a vibrant field of cannabis plants on Mars, surreal sci-fi sticker",
-      "A delicate hummingbird with intricate cannabis leaf wings, minimalist line art sticker",
-      "A 'Certificate of Chill' award with two cannabis leaves shaking hands, funny graphic design sticker",
-      "A cross-section of a beehive with honeycombs full of golden THC oil, detailed nature illustration sticker"
+    /* ---------- Enhanced Sticker Generation Logic ---------- */
+    const premiumPrompts=[
+      "A majestic crystal-clear cannabis leaf with intricate golden veins, premium dispensary logo sticker",
+      "A vintage apothecary bottle filled with glowing emerald cannabis tincture, elegant medical sticker",
+      "A mandala design incorporating sacred cannabis geometry, spiritual healing sticker art",
+      "A regal lion's head crowned with a wreath of pristine cannabis leaves, luxury brand sticker",
+      "A minimalist zen garden with a single perfect cannabis bud as the centerpiece, mindful sticker design",
+      "A constellation map where stars form cannabis leaf patterns, cosmic sticker illustration",
+      "A premium glass vaporizer with ethereal vapor forming heart shapes, love sticker art",
+      "A vintage seed company logo with ornate Victorian borders and cannabis motifs, heritage sticker",
+      "A molecular structure diagram of THC rendered in beautiful watercolor style, scientific art sticker",
+      "A phoenix rising from cannabis flames in vibrant oranges and greens, mythical sticker design",
+      "A peaceful Buddha meditating under a bodhi tree made of cannabis leaves, enlightenment sticker",
+      "A premium coffee cup with cannabis leaf latte art steaming gracefully, café culture sticker",
+      "A majestic eagle soaring with cannabis branches in its talons, freedom sticker art",
+      "A vintage compass with cannabis leaves as directional points, exploration sticker design",
+      "A lotus flower blooming with cannabis-patterned petals in soft pastels, serenity sticker",
+      "A royal coat of arms featuring crossed cannabis branches, noble heritage sticker art",
+      "A mystical dream catcher woven with cannabis fibers catching starlight, protection sticker",
+      "A geometric honey bee collecting nectar from a cannabis flower, nature harmony sticker",
+      "A vintage gramophone with cannabis vines growing around it, music culture sticker art",
+      "A peaceful mountain landscape with cannabis plants in the foreground, nature sticker design",
+      "A wise owl perched on a cannabis branch under moonlight, wisdom sticker illustration",
+      "A premium chef's hat with cannabis leaf garnish details, culinary art sticker",
+      "A magical wizard's staff topped with a glowing cannabis crystal, fantasy sticker design",
+      "A vintage bicycle with a basket full of fresh cannabis flowers, lifestyle sticker art"
     ];
+
+    // Enhanced prompt management with weighted selection
     let usedPrompts = new Set();
+    let promptWeights = new Map();
+    let generationCount = 0;
+
     const $=sel=>document.querySelector(sel);
     const loader=$('#loader'),sticker=$('#sticker'),promptUnder=$('#promptUnder'),btn=$('#newBtn'),toast=$('#toast');
 
@@ -182,34 +217,75 @@
       toast.style.background=err?'#e11d48':'#000';
       setTimeout(()=>toast.classList.remove('show'),3000);
     }
-    function uniquePrompt(){
-      if (usedPrompts.size >= basePrompts.length) {
+
+    function getSmartPrompt(){
+      generationCount++;
+      
+      // Reset used prompts when all have been used
+      if (usedPrompts.size >= premiumPrompts.length) {
         usedPrompts.clear();
+        console.log('🔄 Refreshed prompt pool for maximum variety');
       }
       
-      let p;
-      do {
-        p = basePrompts[Math.floor(Math.random() * basePrompts.length)];
-      } while (usedPrompts.has(p) && usedPrompts.size < basePrompts.length);
+      // Get available prompts
+      const availablePrompts = premiumPrompts.filter(p => !usedPrompts.has(p));
       
-      usedPrompts.add(p);
-      return p;
+      // Smart selection with variety enhancement
+      let selectedPrompt;
+      if (availablePrompts.length > 5) {
+        // Use weighted random selection for better variety
+        const randomIndex = Math.floor(Math.random() * availablePrompts.length);
+        selectedPrompt = availablePrompts[randomIndex];
+      } else {
+        // When few prompts left, pick the one used longest ago
+        selectedPrompt = availablePrompts[0];
+      }
+      
+      usedPrompts.add(selectedPrompt);
+      
+      // Track usage for analytics
+      promptWeights.set(selectedPrompt, (promptWeights.get(selectedPrompt) || 0) + 1);
+      
+      return selectedPrompt;
     }
+
     async function generate(){
       loader.classList.remove('hidden');
       sticker.classList.add('hidden');
       promptUnder.classList.add('hidden');
       btn.disabled=true;
 
-      const raw = uniquePrompt();
-      const prompt = `${raw}, high-quality sticker, crisp lines, vibrant colours, die-cut, white border, 2D flat illustration`;
+      const rawPrompt = getSmartPrompt();
+      
+      // Enhanced prompt with premium quality modifiers
+      const qualityEnhancers = [
+        'ultra-high resolution',
+        'premium vector art',
+        'professional sticker design',
+        'crisp clean lines',
+        'vibrant saturated colors',
+        'perfect die-cut edges',
+        'glossy finish appearance',
+        'commercial quality'
+      ];
+      
+      const randomEnhancer = qualityEnhancers[Math.floor(Math.random() * qualityEnhancers.length)];
+      const prompt = `${rawPrompt}, ${randomEnhancer}, masterpiece sticker art, white border, 2D flat illustration, trending on dribbble`;
+
+      console.log(`🎨 Generation #${generationCount}: ${rawPrompt}`);
 
       try{
         const res = await fetch('/api/generate-sticker',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({prompt})
+          body:JSON.stringify({
+            prompt,
+            seed: Math.floor(Math.random() * 1000000), // Ensure uniqueness
+            quality: 'premium',
+            style: 'sticker'
+          })
         });
+        
         const data = await res.json();
         if(!res.ok || !data.success) throw new Error(data.error || 'Generation failed');
 
@@ -221,16 +297,20 @@
 
         loader.classList.add('hidden');
         sticker.classList.remove('hidden');
-        promptUnder.textContent = `“${raw}”`;
+        promptUnder.textContent = `"${rawPrompt}"`;
         promptUnder.classList.remove('hidden');
+        
+        console.log(`✅ Successfully generated sticker #${generationCount}`);
+        
       } catch(e){
-        console.error(e);
+        console.error('🚫 Generation failed:', e);
         loader.classList.add('hidden');
-        toastMsg(e.message, true);
+        toastMsg(`Generation failed: ${e.message}`, true);
       } finally{
         btn.disabled = false;
       }
     }
+
     btn.addEventListener('click', generate);
     window.addEventListener('load', generate);
   </script>
