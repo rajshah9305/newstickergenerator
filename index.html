@@ -6,6 +6,7 @@
   <title>Weed Sticker Generator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* ----  LOADER  ---- */
     .loader {
       border: 4px solid rgba(0,0,0,.15);
       border-left-color: #16a34a;
@@ -14,32 +15,44 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ----  LAYOUT  ---- */
     body { min-height: 100vh; display: flex; flex-direction: column; }
     main { flex: 1; }
+
+    /* push hero DOWN */
+    header { margin-top: clamp(4vh, 6vh, 12vh); }
+
+    /* pull footer UP */
+    footer { margin-bottom: clamp(2vh, 4vh, 8vh); }
   </style>
 </head>
 
 <body class="bg-white text-gray-800">
-  <header class="w-full px-4 pt-6 pb-3 text-center">
-    <h1 class="font-extrabold text-green-600" style="font-size: clamp(2.25rem, 7vw, 4rem); line-height: 1.05;">
+  <!-- HERO – lowered & bigger -->
+  <header class="w-full px-4 pt-4 pb-2 text-center">
+    <h1 class="font-extrabold text-green-600 drop-shadow-sm"
+        style="font-size: clamp(2.8rem, 9vw, 5.5rem); line-height: 1.02;">
       Weed Sticker Generator
     </h1>
-    <p class="text-gray-500 text-sm mt-1">Refresh for a new sticker</p>
+    <p class="text-gray-600 text-sm mt-2">Refresh for a new sticker</p>
   </header>
 
+  <!-- MAIN – natural image size -->
   <main class="grid place-items-center px-4 pb-6">
-    <div class="w-full max-w-3xl aspect-square sm:aspect-video bg-gray-50 rounded-2xl shadow flex items-center justify-center">
+    <div id="card" class="w-auto max-w-[95vw] max-h-[75vh] bg-gray-50 rounded-2xl shadow p-4 grid place-items-center">
       <div id="loader" class="flex flex-col items-center gap-3">
         <div class="loader"></div>
         <p class="font-medium text-sm text-gray-600">Generating image…</p>
         <p id="prompt" class="text-xs text-gray-400 italic px-4 text-center"></p>
       </div>
-      <img id="sticker" class="hidden w-full h-full object-contain rounded-2xl" alt="weed sticker">
+      <img id="sticker" class="hidden max-w-full max-h-full object-contain rounded-xl" alt="weed sticker">
     </div>
   </main>
 
-  <footer class="text-center text-xs text-gray-400 py-4">
-    Images are AI-generated • Developed by RAJ with ❤️
+  <!-- FOOTER – lifted & darker -->
+  <footer class="text-center text-xs text-gray-700 py-4" style="margin-bottom: clamp(2vh, 4vh, 8vh);">
+    Images are AI-generated · Developed by RAJ with ❤️
   </footer>
 
   <script>
