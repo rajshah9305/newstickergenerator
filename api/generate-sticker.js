@@ -1,6 +1,5 @@
-// api/generate-sticker.js  (ES-module, Node 18)
+// api/generate-sticker.js  →  4K UHD via Pollinations
 export default async function handler(req, res) {
-  /* ---------- CORS ---------- */
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
@@ -12,24 +11,24 @@ export default async function handler(req, res) {
 
   try {
     const { prompt } = req.body;
-    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0 || prompt.length > 500)
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0 || prompt.length > 600)
       return res.status(400).json({ error: 'Invalid prompt' });
 
     const cleanPrompt = prompt.trim();
 
-    /* ---------- Pollinations ---------- */
+    /* 4K UHD request */
     const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}` +
-                '?model=flux&width=512&height=512&nologo=true&private=true';
+                '?model=flux-4k&width=3840&height=2160&nologo=true&private=true&enhance=true';
 
     const fetchRes = await fetch(url);
-    if (!fetchRes.ok) throw new Error('Pollinations error ' + fetchRes.status);
+    if (!fetchRes.ok) throw new Error('Pollinations 4K error ' + fetchRes.status);
 
     const buffer = await fetchRes.arrayBuffer();
     const base64 = Buffer.from(buffer).toString('base64');
 
-    return res.status(200).json({ success: true, image: base64, method: 'Pollinations' });
+    return res.status(200).json({ success: true, image: base64, method: 'Pollinations-4K' });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: 'Sticker generation failed', details: err.message });
+    return res.status(500).json({ error: '4K generation failed', details: err.message });
   }
 }
