@@ -14,35 +14,23 @@
       background:#fff;color:#000;font-family:'Inter',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
       -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
     }
-    #smoke{position:fixed;inset:0;z-index:0;background:#fff;overflow:hidden;pointer-events:none;transition:filter .45s ease,opacity .45s ease}
+    #smoke{position:fixed;inset:0;z-index:0;background:#fff;overflow:hidden}
     #smoke canvas{display:block;width:100%;height:100%}
-    /* dim state: subtle brightness/contrast reduction + slight opacity drop */
-    #smoke.dim{ /* in case non-canvas fallback */
-      filter:brightness(.86) contrast(.94);
-      opacity:.92;
-    }
-    #smoke.dim canvas{
-      filter:brightness(.86) contrast(.94);
-      opacity:.92;
-      transition:filter .45s ease,opacity .45s ease;
-    }
-
     .loader{width:56px;height:56px;border:4px solid rgba(0,0,0,.1);border-left-color:#ec4899;border-radius:50%;animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
     #stickerWrap{position:relative;z-index:10;flex:1;display:flex;align-items:center;justify-content:center;padding:1rem}
     #sticker{max-width:80vw;max-height:55vh;height:auto;object-fit:contain;filter:drop-shadow(0 25px 25px rgba(0,0,0,.3));transition:opacity .4s ease,transform .4s ease}
     #sticker.hidden{opacity:0;transform:scale(.96)}
+    #smoke.dim{filter:brightness(.7) contrast(.8);opacity:.8;transition:filter .5s ease,opacity .5s ease;}
     .generate-btn{background:linear-gradient(135deg,#ec4899 0%,#be185d 100%);color:#fff;padding:.875rem 2.5rem;border-radius:9999px;font-weight:600;box-shadow:0 10px 25px -5px rgba(236,72,153,.3);transition:all .3s ease;border:none;cursor:pointer}
     .generate-btn:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 15px 35px -5px rgba(236,72,153,.4)}
     .generate-btn:disabled{opacity:.5;cursor:not-allowed}
     .toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:.75rem 1.25rem;border-radius:9999px;font-size:.875rem;opacity:0;transition:opacity .3s ease;pointer-events:none;z-index:50}
     .toast.show{opacity:1}
-    footer.site-footer{position:relative;z-index:20;text-align:center;padding:.75rem 1rem;font-size:.875rem;color:#6b7280}
     /* Respect prefers-reduced-motion */
     @media (prefers-reduced-motion: reduce){
       .loader{animation:none;border-left-color:#ec4899}
       #sticker{transition:none}
-      #smoke.dim canvas{transition:none}
     }
   </style>
 </head>
@@ -69,20 +57,11 @@
 
   <div id="toast" class="toast" role="status" aria-live="assertive"></div>
 
-  <footer class="site-footer">Images are AI generated • Developed by RAJ with ❤️</footer>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script type="module">
-    /* ---------- Pink-Kush Smoke (updated) ---------- */
+    /* ---------- Pink-Kush Smoke ---------- */
     let scene,camera,renderer,material,uniforms;
-    const vert=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`;
-
-    // Fragment shader updated:
-    // - Emphasize upward motion by subtracting time from y coordinate
-    // - Darker base palette with pink highlights
-    // - Alpha shaped stronger at bottom and fades toward top & edges
-    const frag=`varying vec2 vUv;uniform float u_time;uniform vec2 u_resolution;
-    // noise helpers (classic)
+    const vert=`varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`    const frag=`varying vec2 vUv;uniform float u_time;uniform vec2 u_resolution;
     vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
     vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);}
     float snoise(vec2 v){const vec4 C=vec4(0.211324865405187,0.366025403784439,-0.577350269189626,0.024390243902439);
@@ -94,56 +73,28 @@
     m*=1.79284291400159-0.85373472095314*(a0*a0+h*h);vec3 g;
     g.x=a0.x*x0.x+h.x*x0.y;g.yz=a0.yz*x12.xz+h.yz*x12.yw;return 130.0*dot(m,g);}
     float fbm(vec2 st){float value=0.0,amp=0.5;for(int i=0;i<5;i++){value+=amp*snoise(st);st*=2.0;amp*=0.5;}return value;}
-
     void main(){
-      vec2 uv=vUv;
-      // emphasize upward motion: subtract larger time offset from y
-      float t = u_time * 0.14;
-      vec2 suv = uv;
-      suv.y -= t * 0.55; // stronger upward drift
-
-      // layered distortions
-      float n1 = fbm(suv * 2.0 + t);
-      float n2 = fbm(suv * 3.0 - t * 0.6);
-      suv.x += n1 * 0.14;
-      suv.y += n2 * 0.10;
-
-      float sw = fbm(suv * 2.8 + t * 1.8);
-      suv += sw * 0.06;
-
-      float fn = (fbm(suv * 1.2) * 0.5 + fbm(suv * 2.6 + t) * 0.32 + fbm(suv * 4.2 - t * 0.9) * 0.18);
-
-      // darker base palette + pink highlights
-      vec3 baseA = vec3(0.12, 0.08, 0.15); // deep purple/charcoal
-      vec3 baseB = vec3(0.22, 0.10, 0.20); // dark mauve
-      vec3 highlight = vec3(1.00, 0.58, 0.78); // vivid pink highlight
-      vec3 glow = vec3(0.95, 0.72, 0.86); // pale pink accent
-
-      vec3 col = mix(baseA, baseB, smoothstep(-0.6, 0.6, fn));
-      col = mix(col, highlight, smoothstep(0.0, 1.0, fbm(suv * 3.2 + t)));
-      col = mix(col, glow, smoothstep(-1.0, 0.0, fbm(suv * 1.6)));
-
-      // overall exposure for darker look
-      col *= 0.45 + 0.85 * (fn + 0.5);
-
-      // alpha shaping: stronger at bottom (low uv.y), fades toward top and edges
-      // vertical falloff: bottom (uv.y ~ 0) -> stronger; top (uv.y ~1) -> weaker
-      float vertical = pow(1.0 - smoothstep(0.0, 0.95, uv.y), 1.5);
-      // radial fade to soften edges
-      float dist = distance(uv, vec2(0.5, 0.45)); // center slightly lower
-      float radial = 1.0 - smoothstep(0.18, 0.55, dist);
-      // subtle horizontal softness near edges
-      float horiz = smoothstep(0.05, 0.22, uv.x) * smoothstep(0.95, 0.78, uv.x);
-      horiz = clamp(horiz, 0.0, 1.0);
-
-      float baseAlpha = (fn + 1.0) * 0.5;
-      float a = baseAlpha * vertical * radial * (0.85 + 0.15 * horiz);
-      a = clamp(a, 0.0, 0.92);
-
-      // slight color tinting by alpha for more depth
-      col = mix(vec3(0.05,0.04,0.06), col, 0.9 + 0.6 * a);
-
-      gl_FragColor = vec4(col, a);
+      vec2 uv=vUv;float t=u_time*0.09;
+      vec2 suv=uv;suv.y-=(t*0.35); // Emphasize upward motion
+      float n1=fbm(suv*2.0+t),n2=fbm(suv*3.0-t*0.5);
+      suv.x+=n1*0.12;suv.y+=n2*0.08;
+      float sw=fbm(suv*2.5+t*2.0);suv+=sw*0.06;
+      float fn=(fbm(suv*1.2)*0.55+fbm(suv*2.5+t)*0.3+fbm(suv*4.0-t*0.8)*0.15);
+      // Darker base palette with pink highlights
+      vec3 c1=vec3(0.1,0.0,0.05); // Darker base
+      vec3 c2=vec3(0.2,0.0,0.1);  // Darker mid
+      vec3 c3=vec3(0.9,0.2,0.5);  // Pink highlight
+      vec3 c4=vec3(0.4,0.0,0.2);  // Darker accent
+      vec3 col=mix(c1,c2,smoothstep(-0.5,0.5,fn));
+      col=mix(col,c3,smoothstep(0.0,1.0,fbm(suv*3.0+t)));
+      col=mix(col,c4,smoothstep(-1.0,0.0,fbm(suv*1.5)));
+      col*=0.25+0.7*(fn+1.0)*0.5;
+      // Shape alpha stronger at bottom, fading toward top and edges
+      float fy=smoothstep(0.0,0.6,uv.y)*smoothstep(1.0,0.7,uv.y); // Stronger at bottom, fades less abruptly at top
+      float fx=smoothstep(0.0,0.3,uv.x)*smoothstep(1.0,0.7,uv.x); // Fades toward edges
+      float a=(fn+1.0)*0.5*fy*fx;
+      a=clamp(a,0.0,0.95); // Slightly higher max alpha
+      gl_FragColor=vec4(col,a);
     }`;
 
     function initSmoke(){
@@ -156,7 +107,7 @@
         renderer=new THREE.WebGLRenderer({antialias:false,alpha:true,powerPreference:powerPref,precision:'mediump'});
         renderer.setSize(window.innerWidth,window.innerHeight,false);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-        renderer.setClearColor(0xffffff,0); // keep transparent background so page BG shows through
+        renderer.setClearColor(0xffffff,1);
         el.appendChild(renderer.domElement);
         const geom=new THREE.PlaneGeometry(2,2);
         uniforms={u_time:{value:0},u_resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)}};
@@ -199,7 +150,7 @@
 
     let lastPrompt='';
     const $=sel=>document.querySelector(sel);
-    const loader=$('#loader'),sticker=$('#sticker'),promptEl=$('#prompt'),btn=$('#newBtn'),toast=$('#toast'),smokeEl=$('#smoke');
+    const loader=$('#loader'),sticker=$('#sticker'),promptEl=$('#prompt'),btn=$('#newBtn'),toast=$('#toast');
 
     function toastMsg(msg,err=false){
       toast.textContent=msg;
@@ -273,27 +224,17 @@
       }
     }
 
-    // setLoading now optionally handles dim class:
-    // setLoading(state, label, successWhenStopping)
-    function setLoading(state, label, successWhenStopping){
+    function setLoading(state, label){
       if(state){
         loader.classList.remove('hidden');
         loader.setAttribute('aria-busy','true');
         sticker.classList.add('hidden');
         btn.disabled=true;
-        // Remove dim while creating new sticker
-        smokeEl && smokeEl.classList.remove('dim');
         if(label) promptEl.textContent=label;
       }else{
         loader.classList.add('hidden');
         loader.removeAttribute('aria-busy');
         btn.disabled=false;
-        // If generation succeeded, dim the smoke to draw attention to sticker
-        if(successWhenStopping){
-          smokeEl && smokeEl.classList.add('dim');
-        } else {
-          smokeEl && smokeEl.classList.remove('dim');
-        }
       }
     }
 
@@ -301,6 +242,7 @@
       try{
         const { raw, full } = uniquePrompt();
         const label=`“${raw}”`;
+        document.getElementById("smoke").classList.remove("dim");
         setLoading(true, label);
 
         const data=await fetchWithRetry({ prompt: full, size: 'md' }, 1);
@@ -320,13 +262,12 @@
         sticker.width = data.width || undefined;
         sticker.height = data.height || undefined;
 
-        // show sticker and dim the smoke (success)
-        setLoading(false, undefined, true);
-        sticker.classList.remove('hidden');
+        setLoading(false);
+        sticker.classList.remove("hidden");
+        document.getElementById("smoke").classList.add("dim");
       }catch(e){
         console.error(e);
-        // On error, clear loading and do not dim
-        setLoading(false, undefined, false);
+        setLoading(false);
         if(e.name!=='AbortError') toastMsg(e.message || 'Generation failed', true);
       }
     }
@@ -334,5 +275,8 @@
     btn.addEventListener('click', generate, { passive:true });
     window.addEventListener('load', generate);
   </script>
+  <footer class="relative z-10 w-full text-center py-4 text-xs text-black/60">
+    Images are AI generated • Developed by RAJ with ❤️
+  </footer>
 </body>
 </html>
