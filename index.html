@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Weed Sticker Generator – Pink Smoke</title>
+  <title>Weed Sticker – Pink Smoke</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* ----  PINK SMOKE BACKDROP  ---- */
+    /* ----  SMOKE  ---- */
     #smoke {
       position: fixed;
       inset: 0;
@@ -37,7 +37,7 @@
 </head>
 
 <body>
-  <!-- pink smoke rising from bottom -->
+  <!-- pink smoke -->
   <div id="smoke"><canvas id="smokeCanvas"></canvas></div>
 
   <!-- HERO -->
@@ -70,105 +70,48 @@
     Images are AI-generated · Developed by RAJ with ❤️
   </footer>
 
-  <!-- ------------------------------------------------------------------ -->
-  <!--                     THREE.JS  –  PINK-KUSH SMOKE                   -->
-  <!-- ------------------------------------------------------------------ -->
+  <!-- ----------  PINK SMOKE  –  1-FILE COPY  ---------- -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script id="vertexShader" type="x-shader/x-vertex">
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }
-  </script>
-  <script id="fragmentShader" type="x-shader/x-fragment">
-    varying vec2 vUv;
-    uniform float u_time;
-
-    float random(vec2 st) {
-      return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-    }
-    float noise(vec2 st) {
-      vec2 i = floor(st), f = fract(st);
-      float a = random(i), b = random(i + vec2(1.0, 0.0)),
-            c = random(i + vec2(0.0, 1.0)), d = random(i + vec2(1.0, 1.0));
-      vec2 u = f * f * (3.0 - 2.0 * f);
-      return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-    }
-    float fbm(vec2 st) {
-      float value = 0.0, amplitude = .5, frequency = 0.;
-      for (int i = 0; i < 6; i++) {
-        value += amplitude * noise(st);
-        st *= 2.; amplitude *= .5;
-      }
-      return value;
-    }
-
-    void main() {
-      vec2 uv = vUv;
-      float t = u_time * 0.05;
-      uv.y -= t; // rise from bottom
-      float turbulence = fbm(uv * 2.0);
-      uv.y += turbulence * 0.1;
-      uv.x += turbulence * 0.05;
-      float swirl = fbm(uv * 3.0 + t);
-      uv += swirl * 0.2;
-      float final_noise = fbm(uv * 2.5);
-      // pink colour
-      vec3 color = vec3(final_noise * 1.2, final_noise * 0.3, final_noise * 0.9);
-      float vignette = distance(vUv, vec2(0.5, 0.5));
-      color *= 1.0 - vignette * 0.3;
-      gl_FragColor = vec4(color, final_noise * 0.8);
-    }
-  </script>
-
   <script>
-    /* ----------  THREE.JS BOILERPLATE  ---------- */
-    let scene, camera, renderer, plane, material, uniforms;
-    function initSmoke() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.z = 1;
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.getElementById('smoke').appendChild(renderer.domElement);
+    /* ----  Pink-Kush Shader (minimal)  ---- */
+    const canvas = document.getElementById('smokeCanvas');
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
+    camera.position.z = 1;
 
-      const geometry = new THREE.PlaneBufferGeometry(2, 2);
-      uniforms = {
-        u_time: { type: "f", value: 1.0 },
-        u_resolution: { type: "v2", value: new THREE.Vector2() },
-        u_mouse: { type: "v2", value: new THREE.Vector2() }
-      };
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+    renderer.setSize(innerWidth, innerHeight);
+    document.getElementById('smoke').appendChild(renderer.domElement);
 
-      material = new THREE.ShaderMaterial({
-        uniforms: uniforms,
-        vertexShader: document.getElementById('vertexShader').textContent,
-        fragmentShader: document.getElementById('fragmentShader').textContent,
-        transparent: true
-      });
+    const plane = new THREE.Mesh(
+      new THREE.PlaneGeometry(2, 2),
+      new THREE.ShaderMaterial({
+        uniforms: { u_time: { value: 0 } },
+        vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+        fragmentShader: `
+          varying vec2 vUv; uniform float u_time;
+          float noise(vec2 st){return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123);}
+          float fbm(vec2 st){float v=0.,a=.5;for(int i=0;i<6;i++){v+=a*noise(st);st*=2.;a*=.5;}return v;}
+          void main(){vec2 uv=vUv;uv.y-=u_time*0.05;float n=fbm(uv*3.);vec3 c=vec3(n*1.2,n*0.3,n*0.9);gl_FragColor=vec4(c,n*0.8);}`
+      })
+    );
+    scene.add(plane);
 
-      plane = new THREE.Mesh(geometry, material);
-      scene.add(plane);
-
-      window.addEventListener('resize', onResize, false);
-      onResize();
-    }
-    function onResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      uniforms.u_resolution.value.x = renderer.domElement.width;
-      uniforms.u_resolution.value.y = renderer.domElement.height;
-    }
-    function animateSmoke() {
-      requestAnimationFrame(animateSmoke);
-      uniforms.u_time.value += 0.05;
+    function animate() {
+      requestAnimationFrame(animate);
+      plane.material.uniforms.u_time.value += 0.05;
       renderer.render(scene, camera);
     }
-    initSmoke();
-    animateSmoke();
+    addEventListener('resize', () => {
+      renderer.setSize(innerWidth, innerHeight);
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+    });
+    animate();
+  </script>
 
-    /* ----------  STICKER LOGIC  ---------- */
+  <!-- ----------  STICKER LOGIC (unchanged)  ---------- -->
+  <script>
     const basePrompts = [
       "glass jar full of frosty cannabis buds, sticker art, die-cut",
       "cartoon cannabis leaf with smiling face, sticker art",
